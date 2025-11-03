@@ -1,0 +1,105 @@
+backend-ml/
+│
+├── 📄 README.md                      # Main documentation
+├── 📄 QUICKSTART.md                  # 5-minute quick start guide
+├── 📄 PROJECT_SUMMARY.md             # Project overview & key info
+├── 📄 STRUCTURE.txt                  # This file - project tree
+├── 📄 requirements.txt               # Python dependencies
+├── 📄 .gitignore                     # Git ignore rules
+│
+├── 📁 data/                          # Data storage (NOT in git)
+│   ├── tamizajes.csv                 # ⚠️  Raw data (required, not included)
+│   ├── dataset_limpio.csv            # Generated: Cleaned data
+│   ├── df_clean_to_model.csv         # Generated: Encoded features
+│   └── dataset_balanceado.csv        # Generated: Balanced dataset
+│
+├── 📁 src/                           # Source code
+│   ├── data_preparation.py           # Data pipeline module
+│   ├── train_model.py               # Training script (executable)
+│   ├── example_prediction.py        # Example usage script
+│   │
+│   └── 📁 models/                    # Model modules
+│       ├── __init__.py               # Package init
+│       ├── training.py               # Training logic
+│       └── prediction.py             # Prediction logic
+│
+├── 📁 api/                           # REST API
+│   └── main.py                       # FastAPI application
+│
+├── 📁 models/                        # Trained models storage
+│   └── trained_model.pkl             # Generated: Serialized model
+│
+├── 📁 docs/                          # Documentation & visualizations
+│   ├── PROJECT_STRUCTURE.md          # Architecture documentation
+│   ├── evaluation_actual_vs_predicted.png  # Generated plot
+│   └── evaluation_feature_importance.png   # Generated plot
+│
+├── 📁 tests/                         # Unit tests
+│   └── test_prediction.py            # Prediction tests
+│
+└── 📁 notebooks/                     # Jupyter notebooks (original work)
+    └── parcialfinal.ipynb           # Original exploration notebook
+
+USAGE WORKFLOW:
+===============
+
+1. SETUP:
+   $ python -m venv venv
+   $ source venv/bin/activate  # or venv\Scripts\activate on Windows
+   $ pip install -r requirements.txt
+
+2. TRAIN MODEL:
+   $ python src/train_model.py
+   
+   Generates:
+   - models/trained_model.pkl
+   - data/dataset_*.csv
+   - docs/evaluation_*.png
+
+3. START API:
+   $ uvicorn api.main:app --reload
+   
+   Access:
+   - API: http://localhost:8000
+   - Docs: http://localhost:8000/docs
+
+4. TEST:
+   $ python src/example_prediction.py
+   $ pytest tests/
+
+KEY FILES TO REVIEW:
+====================
+✅ README.md                 - Start here
+✅ QUICKSTART.md            - Quick setup
+✅ src/data_preparation.py  - Data pipeline
+✅ src/models/training.py   - ML training
+✅ src/models/prediction.py - Prediction logic
+✅ api/main.py              - REST API endpoints
+
+API ENDPOINTS:
+==============
+POST /predict               - Single prediction
+POST /predict/batch        - Batch predictions
+GET  /model/info           - Model information
+GET  /model/features       - Feature importance
+GET  /metadata/*           - Valid values for fields
+GET  /health               - Health check
+
+TECHNOLOGIES USED:
+==================
+🐍 Python 3.8+
+📊 Scikit-learn (ML)
+🚀 FastAPI (API)
+🐼 Pandas/NumPy (Data)
+📈 Matplotlib/Seaborn (Viz)
+⚡ Uvicorn (Server)
+
+PROJECT STATISTICS:
+===================
+- Python Files: 8
+- Documentation Files: 4
+- Test Files: 1
+- API Endpoints: 9
+- ML Models Supported: 2 (Gradient Boosting, Random Forest)
+- Features: 43 after encoding
+- Lines of Code: ~1500+
