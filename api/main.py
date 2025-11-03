@@ -4,7 +4,7 @@ FastAPI Application for Mental Health Screening Predictions
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import sys
 import os
@@ -57,13 +57,15 @@ class PredictionInput(BaseModel):
     Etapa: str = Field(..., description="Grupo etario")
     DetalleTamizaje: str = Field(..., description="Tipo de tamizaje")
 
-    @validator('Sexo')
+    @field_validator('Sexo')
+    @classmethod
     def validate_sexo(cls, v):
         if v not in ['F', 'M']:
             raise ValueError('Sexo debe ser F o M')
         return v
 
-    @validator('Departamento')
+    @field_validator('Departamento')
+    @classmethod
     def validate_departamento(cls, v):
         departamentos_validos = [
             'ANCASH', 'APURIMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA',
@@ -76,7 +78,8 @@ class PredictionInput(BaseModel):
             raise ValueError(f'Departamento no válido. Debe ser uno de: {", ".join(departamentos_validos)}')
         return v.upper()
 
-    @validator('DetalleTamizaje')
+    @field_validator('DetalleTamizaje')
+    @classmethod
     def validate_detalle_tamizaje(cls, v):
         tipos_validos = [
             'SINDROME Y/O TRASTORNO PSICOTICO',

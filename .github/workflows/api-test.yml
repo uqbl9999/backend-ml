@@ -1,0 +1,76 @@
+name: API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'requirements.txt'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'api/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'requirements.txt'
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install httpx
+
+    - name: Start API server
+      run: |
+        uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+        sleep 5
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
+    - name: Wait for API to be ready
+      run: |
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/health; then
+            echo "API is ready"
+            exit 0
+          fi
+          echo "Waiting for API... ($i/30)"
+          sleep 2
+        done
+        echo "API failed to start"
+        exit 1
+
+    - name: Test API endpoints
+      run: |
+        echo "Testing root endpoint..."
+        curl -f http://localhost:8000/ || exit 1
+
+        echo "Testing health endpoint..."
+        curl -f http://localhost:8000/health || exit 1
+
+        echo "Testing metadata endpoints..."
+        curl -f http://localhost:8000/metadata/departamentos || exit 1
+        curl -f http://localhost:8000/metadata/tamizajes || exit 1
+        curl -f http://localhost:8000/metadata/etapas || exit 1
+
+    - name: Test API docs
+      run: |
+        echo "Testing Swagger UI..."
+        curl -f http://localhost:8000/docs || exit 1
+
+        echo "Testing OpenAPI schema..."
+        curl -f http://localhost:8000/openapi.json || exit 1

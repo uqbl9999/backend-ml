@@ -21,3 +21,7 @@ python-multipart==0.0.6
 # Development (optional)
 jupyter==1.0.0
 notebook==7.0.6
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
