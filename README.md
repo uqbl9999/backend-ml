@@ -10,6 +10,7 @@ Este proyecto desarrolla un modelo de Machine Learning para predecir la tasa de 
 
 - **Predicción de Tasa de Positividad**: Predice el porcentaje de casos positivos en tamizajes
 - **API REST con FastAPI**: Endpoints para predicciones individuales y en lote
+- **IA Explicable (XAI)**: Explicaciones generadas por GPT sobre las predicciones
 - **Modelos ML**: Gradient Boosting y Random Forest con optimización de hiperparámetros
 - **Balanceo de Datos**: Implementación de SMOTE para manejo de clases desbalanceadas
 - **Interpretación de Resultados**: Clasificación automática de niveles de riesgo
@@ -34,7 +35,8 @@ backend-ml/
 │   │   └── prediction.py          # Predicciones
 │   └── services/                  # Servicios adicionales
 │       ├── __init__.py
-│       └── ubigeo_service.py      # Mapeo Departamento+Provincia→Ubigeo
+│       ├── ubigeo_service.py      # Mapeo Departamento+Provincia→Ubigeo
+│       └── xai_service.py         # Servicio de IA Explicable (XAI)
 │
 ├── api/                           # API REST
 │   └── main.py                    # FastAPI application
@@ -91,6 +93,23 @@ pip install -r requirements.txt
 ### Paso 4: Preparar los Datos
 
 Asegúrate de tener el archivo `tamizajes.csv` en el directorio raíz del proyecto.
+
+### Paso 5: (Opcional) Configurar IA Explicable
+
+Para habilitar las funcionalidades de **Explainable AI (XAI)**, configura tu API key de Perplexity:
+
+```bash
+# Linux/Mac
+export PERPLEXITY_API_KEY="tu-api-key-aqui"
+
+# Windows CMD
+set PERPLEXITY_API_KEY=tu-api-key-aqui
+
+# Windows PowerShell
+$env:PERPLEXITY_API_KEY="tu-api-key-aqui"
+```
+
+**Nota:** Esta configuración es opcional. La API funcionará normalmente sin ella, pero el endpoint `/predict/explain` no estará disponible.
 
 ## 🎯 Uso
 
@@ -173,6 +192,48 @@ curl http://localhost:8000/metadata/ubigeo/LIMA/LIMA
 # Respuesta: {"ubigeo": 140101, "location": {...}}
 ```
 
+## 🤖 IA Explicable (Explainable AI - XAI)
+
+El sistema incluye un módulo de **IA Explicable** que utiliza GPT para generar explicaciones claras y concisas sobre las predicciones del modelo.
+
+### Características del XAI
+
+- **Contexto Situacional**: Explica por qué la predicción tiene ese nivel de riesgo
+- **Acciones Específicas**: Recomienda 3 acciones preventivas concretas adaptadas al contexto
+- **Factores Clave**: Identifica los principales factores que influyen en la predicción
+- **Explicaciones Concisas**: Diseñadas para encajar perfectamente en interfaces de usuario
+
+### Cómo Funciona
+
+1. **Usuario solicita predicción** con explicación mediante `/predict/explain`
+2. **Modelo genera predicción** estándar con tasa de positividad
+3. **Servicio XAI analiza** los parámetros y el resultado
+4. **GPT genera explicación** contextual y accionable
+5. **Respuesta integrada** incluye predicción + explicación
+
+### Ventajas
+
+- **Transparencia**: Los usuarios entienden por qué se obtuvo ese resultado
+- **Accionable**: Proporciona recomendaciones específicas para cada caso
+- **Adaptativo**: Las explicaciones se ajustan al contexto geográfico y demográfico
+- **Formato UI-friendly**: Explicaciones concisas que no rompen el diseño de la interfaz
+
+### Configuración
+
+Para habilitar XAI, necesitas una API key de Perplexity:
+
+```bash
+# Configurar variable de entorno
+export PERPLEXITY_API_KEY="pplx-..."  # En Linux/Mac
+set PERPLEXITY_API_KEY=pplx-...       # En Windows CMD
+```
+
+### Uso Responsable
+
+- Las explicaciones son generadas por IA y deben ser interpretadas como guías orientativas
+- Recomendamos validar las recomendaciones con expertos en salud mental
+- El sistema usa **sonar** (Llama 3.3 70B) por defecto para balance entre calidad y costo
+
 ## 📡 Endpoints de la API
 
 ### Predicción Individual
@@ -208,6 +269,59 @@ POST /predict
     "Etapa": "5 - 9",
     "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL",
     "ubigeo": 140101
+  }
+}
+```
+
+### Predicción con Explicación (XAI)
+
+```bash
+POST /predict/explain
+```
+
+**Descripción**: Realiza una predicción e incluye una explicación generada por IA sobre el contexto, acciones recomendadas y factores clave.
+
+**Requisito**: Requiere configurar `PERPLEXITY_API_KEY` como variable de entorno.
+
+**Ejemplo de Request:**
+
+```json
+{
+  "NroMes": 1,
+  "Departamento": "ANCASH",
+  "Provincia": "AIJA",
+  "Sexo": "F",
+  "Etapa": "< 1",
+  "DetalleTamizaje": "SINDROME Y/O TRASTORNO PSICOTICO"
+}
+```
+
+**Ejemplo de Response:**
+
+```json
+{
+  "tasa_positividad_predicha": 24.02,
+  "interpretacion": "Riesgo Muy Alto - Intervención urgente requerida",
+  "input_data": {
+    "NroMes": 1,
+    "Departamento": "ANCASH",
+    "Provincia": "AIJA",
+    "Sexo": "F",
+    "Etapa": "< 1",
+    "DetalleTamizaje": "SINDROME Y/O TRASTORNO PSICOTICO",
+    "ubigeo": 20201
+  },
+  "explicacion": {
+    "contexto_situacional": "La tasa se encuentra en un rango moderado respecto a la media histórica. Se recomienda fortalecer la detección temprana y reforzar los protocolos de derivación.",
+    "acciones": [
+      "Reforzar acciones preventivas y seguimiento",
+      "Monitorear indicadores críticos semanalmente",
+      "Coordinar intervención con equipos territoriales"
+    ],
+    "factores_clave": [
+      "Combinación específica de ubicación geográfica y grupo etario",
+      "Mes del año y tipo de tamizaje específico"
+    ]
   }
 }
 ```

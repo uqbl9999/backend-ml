@@ -15,7 +15,10 @@ pip install -r requirements.txt
 # 3. Entrenar el modelo (requiere tamizajes.csv)
 python src/train_model.py
 
-# 4. Iniciar la API
+# 4. (Opcional) Configurar Perplexity API Key para XAI
+export PERPLEXITY_API_KEY="tu-api-key"  # En Windows: set PERPLEXITY_API_KEY=tu-api-key
+
+# 5. Iniciar la API
 uvicorn api.main:app --reload
 ```
 
@@ -31,6 +34,7 @@ uvicorn api.main:app --reload
 
 ### Opción 2: cURL
 
+**Predicción estándar:**
 ```bash
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
@@ -44,8 +48,23 @@ curl -X POST "http://localhost:8000/predict" \
   }'
 ```
 
+**Predicción con explicación XAI:**
+```bash
+curl -X POST "http://localhost:8000/predict/explain" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "NroMes": 1,
+    "Departamento": "ANCASH",
+    "Provincia": "AIJA",
+    "Sexo": "F",
+    "Etapa": "< 1",
+    "DetalleTamizaje": "SINDROME Y/O TRASTORNO PSICOTICO"
+  }'
+```
+
 ### Opción 3: Python
 
+**Predicción estándar:**
 ```python
 import requests
 
@@ -61,6 +80,31 @@ data = {
 
 response = requests.post(url, json=data)
 print(response.json())
+```
+
+**Predicción con explicación XAI:**
+```python
+import requests
+
+url = "http://localhost:8000/predict/explain"
+data = {
+    "NroMes": 1,
+    "Departamento": "ANCASH",
+    "Provincia": "AIJA",
+    "Sexo": "F",
+    "Etapa": "< 1",
+    "DetalleTamizaje": "SINDROME Y/O TRASTORNO PSICOTICO"
+}
+
+response = requests.post(url, json=data)
+result = response.json()
+
+print(f"Tasa de positividad: {result['tasa_positividad_predicha']:.2f}%")
+print(f"Nivel de riesgo: {result['interpretacion']}")
+print(f"\nContexto: {result['explicacion']['contexto_situacional']}")
+print("\nAcciones recomendadas:")
+for accion in result['explicacion']['acciones']:
+    print(f"  - {accion}")
 ```
 
 ### Opción 4: Ejemplo Script
@@ -80,6 +124,33 @@ Después del entrenamiento, se generarán:
 - `models/trained_model.pkl` - Modelo entrenado
 - `data/dataset_*.csv` - Datos procesados
 - `docs/evaluation_*.png` - Gráficos de evaluación
+
+## 🤖 IA Explicable (XAI)
+
+La API incluye funcionalidad de **Explainable AI** usando **Perplexity AI** que genera explicaciones concisas sobre las predicciones.
+
+**Características:**
+- Contexto situacional del riesgo detectado
+- Acciones preventivas específicas y concretas
+- Factores clave que influyen en la predicción
+- Explicaciones adaptadas al contexto geográfico y demográfico
+- Usa Sonar (Llama 3.3 70B) - última generación 2025
+
+**Configuración:**
+Para habilitar XAI, configura tu API key de Perplexity:
+
+```bash
+# Linux/Mac
+export PERPLEXITY_API_KEY="tu-api-key-aqui"
+
+# Windows CMD
+set PERPLEXITY_API_KEY=tu-api-key-aqui
+
+# Windows PowerShell
+$env:PERPLEXITY_API_KEY="tu-api-key-aqui"
+```
+
+**Nota:** El endpoint `/predict/explain` requiere que la variable de entorno `PERPLEXITY_API_KEY` esté configurada. Si no está configurada, devolverá un error 503.
 
 ## 🔧 Comandos Útiles
 
@@ -151,6 +222,7 @@ uvicorn api.main:app --reload --port 8001
 |----------|--------|-------------|
 | `/` | GET | Información general de la API |
 | `/predict` | POST | Predicción individual |
+| `/predict/explain` | POST | Predicción con explicación XAI |
 | `/predict/batch` | POST | Predicciones en lote |
 | `/model/info` | GET | Información del modelo |
 | `/model/features` | GET | Features más importantes |
@@ -161,7 +233,9 @@ uvicorn api.main:app --reload --port 8001
 | `/metadata/etapas` | GET | Grupos etarios válidos |
 | `/health` | GET | Estado de la API |
 
-## 💡 Ejemplo de Respuesta
+## 💡 Ejemplos de Respuesta
+
+### Predicción Estándar
 
 ```json
 {
@@ -175,6 +249,36 @@ uvicorn api.main:app --reload --port 8001
     "Etapa": "5 - 9",
     "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL",
     "ubigeo": 140101
+  }
+}
+```
+
+### Predicción con Explicación XAI
+
+```json
+{
+  "tasa_positividad_predicha": 24.02,
+  "interpretacion": "Riesgo Muy Alto - Intervención urgente requerida",
+  "input_data": {
+    "NroMes": 1,
+    "Departamento": "ANCASH",
+    "Provincia": "AIJA",
+    "Sexo": "F",
+    "Etapa": "< 1",
+    "DetalleTamizaje": "SINDROME Y/O TRASTORNO PSICOTICO",
+    "ubigeo": 20201
+  },
+  "explicacion": {
+    "contexto_situacional": "La tasa se encuentra en un rango moderado respecto a la media histórica. Se recomienda fortalecer la detección temprana y reforzar los protocolos de derivación.",
+    "acciones": [
+      "Reforzar acciones preventivas y seguimiento",
+      "Monitorear indicadores críticos semanalmente",
+      "Coordinar intervención con equipos territoriales"
+    ],
+    "factores_clave": [
+      "Combinación específica de ubicación geográfica y grupo etario",
+      "Mes del año y tipo de tamizaje específico"
+    ]
   }
 }
 ```

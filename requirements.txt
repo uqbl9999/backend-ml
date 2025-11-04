@@ -17,6 +17,11 @@ pydantic==2.5.3
 
 # Utilities
 python-multipart==0.0.6
+requests==2.31.0
+python-dotenv==1.0.0
+
+# AI/ML Services
+# Perplexity no tiene SDK oficial, usamos requests directamente
 
 # Development (optional)
 jupyter==1.0.0

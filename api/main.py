@@ -8,12 +8,17 @@ from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add src directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src.models.prediction import Predictor
 from src.services.ubigeo_service import get_ubigeo_service
+from src.services.xai_service import get_xai_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -35,12 +40,13 @@ app.add_middleware(
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models', 'trained_model.pkl')
 predictor = None
 ubigeo_service = None
+xai_service = None
 
 
 @app.on_event("startup")
 async def startup_event():
     """Load model and ubigeo service on startup"""
-    global predictor, ubigeo_service
+    global predictor, ubigeo_service, xai_service
     try:
         predictor = Predictor(MODEL_PATH)
         print("✅ Model loaded successfully")
@@ -54,6 +60,17 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Warning: Could not load ubigeo service: {e}")
         print("    Location mapping will not be available")
+
+    try:
+        xai_service = get_xai_service()
+        if xai_service:
+            print("✅ XAI service loaded successfully")
+        else:
+            print("⚠️  Warning: XAI service not available (PERPLEXITY_API_KEY not set)")
+            print("    Explainable AI features will not be available")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not load XAI service: {e}")
+        print("    Explainable AI features will not be available")
 
 
 # Request models
@@ -133,6 +150,21 @@ class ModelInfoOutput(BaseModel):
     metrics: dict
 
 
+class XAIExplanationOutput(BaseModel):
+    """Output for XAI explanation"""
+    contexto_situacional: str = Field(..., description="Explicación contextual del riesgo")
+    acciones: List[str] = Field(..., description="Lista de acciones preventivas recomendadas")
+    factores_clave: List[str] = Field(..., description="Factores clave que influyen en la predicción")
+
+
+class PredictionWithXAIOutput(BaseModel):
+    """Output for prediction with XAI explanation"""
+    tasa_positividad_predicha: float = Field(..., description="Tasa de positividad predicha (%)")
+    interpretacion: str = Field(..., description="Interpretación del nivel de riesgo")
+    input_data: dict = Field(..., description="Datos de entrada utilizados")
+    explicacion: Optional[XAIExplanationOutput] = Field(None, description="Explicación de IA explicable")
+
+
 # API Endpoints
 
 @app.get("/")
@@ -144,6 +176,7 @@ async def root():
         "endpoints": {
             "predict": "/predict",
             "predict_batch": "/predict/batch",
+            "predict_with_explanation": "/predict/explain",
             "model_info": "/model/info",
             "feature_importance": "/model/features",
             "health": "/health"
@@ -241,6 +274,86 @@ async def predict_batch(batch_input: BatchPredictionInput):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
+
+
+@app.post("/predict/explain", response_model=PredictionWithXAIOutput)
+async def predict_with_explanation(input_data: PredictionInput):
+    """
+    Realizar predicción con explicación de IA explicable (XAI)
+
+    Predice la tasa de positividad e incluye una explicación generada por IA
+    que detalla el contexto situacional, acciones recomendadas y factores clave.
+
+    Requiere configurar PERPLEXITY_API_KEY en las variables de entorno.
+    """
+    if predictor is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+
+    if ubigeo_service is None:
+        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+
+    try:
+        # Convert Pydantic model to dict
+        input_dict = input_data.dict()
+
+        # If ubigeo is not provided, calculate it from Departamento + Provincia
+        if input_dict.get('ubigeo') is None:
+            departamento = input_dict.get('Departamento')
+            provincia = input_dict.get('Provincia')
+
+            if not departamento or not provincia:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Debe proporcionar Departamento y Provincia, o un ubigeo válido"
+                )
+
+            # Get ubigeo from department and province
+            ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
+
+            if ubigeo is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No se encontró ubigeo para {departamento} - {provincia}"
+                )
+
+            input_dict['ubigeo'] = ubigeo
+
+        # Validate input
+        validation_result = predictor.validate_input(input_dict)
+        if not validation_result['is_valid']:
+            raise HTTPException(status_code=400, detail=validation_result['errors'])
+
+        # Make prediction
+        result = predictor.predict_single(input_dict)
+
+        # Generate XAI explanation if service is available
+        if xai_service:
+            xai_result = xai_service.generate_explanation(
+                params=result['input_data'],
+                prediction=result['tasa_positividad_predicha'],
+                interpretation=result['interpretacion']
+            )
+
+            if xai_result['success']:
+                result['explicacion'] = xai_result['explanation']
+            else:
+                # Log the error for debugging
+                print(f"⚠️  XAI Error: {xai_result.get('error', 'Unknown error')}")
+                # Use fallback explanation if XAI fails
+                result['explicacion'] = xai_result['explanation']
+        else:
+            # XAI service not available
+            raise HTTPException(
+                status_code=503,
+                detail="XAI service not available. Configure PERPLEXITY_API_KEY environment variable."
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 
 @app.get("/model/info", response_model=ModelInfoOutput)

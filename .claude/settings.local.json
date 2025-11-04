@@ -6,7 +6,9 @@
       "Bash(timeout /t 5)",
       "Bash(curl:*)",
       "Bash(python:*)",
-      "Bash(taskkill /F /IM python.exe)"
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(dir:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []
