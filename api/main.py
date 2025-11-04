@@ -13,6 +13,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src.models.prediction import Predictor
+from src.services.ubigeo_service import get_ubigeo_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -33,12 +34,13 @@ app.add_middleware(
 # Load model at startup
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models', 'trained_model.pkl')
 predictor = None
+ubigeo_service = None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Load model on startup"""
-    global predictor
+    """Load model and ubigeo service on startup"""
+    global predictor, ubigeo_service
     try:
         predictor = Predictor(MODEL_PATH)
         print("✅ Model loaded successfully")
@@ -46,16 +48,24 @@ async def startup_event():
         print(f"⚠️  Warning: Could not load model: {e}")
         print("    API will start but predictions will not be available")
 
+    try:
+        ubigeo_service = get_ubigeo_service()
+        print("✅ Ubigeo service loaded successfully")
+    except Exception as e:
+        print(f"⚠️  Warning: Could not load ubigeo service: {e}")
+        print("    Location mapping will not be available")
+
 
 # Request models
 class PredictionInput(BaseModel):
     """Input data for prediction"""
     NroMes: int = Field(..., ge=1, le=12, description="Mes del año (1-12)")
-    ubigeo: Optional[int] = Field(None, description="Código de ubigeo")
     Departamento: str = Field(..., description="Departamento del Perú")
+    Provincia: str = Field(..., description="Provincia del Perú")
     Sexo: str = Field(..., description="Sexo (F o M)")
     Etapa: str = Field(..., description="Grupo etario")
     DetalleTamizaje: str = Field(..., description="Tipo de tamizaje")
+    ubigeo: Optional[int] = Field(None, description="Código de ubigeo (se calcula automáticamente si no se provee)")
 
     @field_validator('Sexo')
     @classmethod
@@ -94,12 +104,12 @@ class PredictionInput(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "NroMes": 5,
-                "ubigeo": 150101,
+                "NroMes": 11,
                 "Departamento": "LIMA",
-                "Sexo": "F",
-                "Etapa": "30 - 39",
-                "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+                "Provincia": "LIMA",
+                "Sexo": "MASCULINO",
+                "Etapa": "NIÑO",
+                "DetalleTamizaje": "VIOLENCIA FAMILIAR"
             }
         }
 
@@ -162,9 +172,34 @@ async def predict(input_data: PredictionInput):
     if predictor is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
 
+    if ubigeo_service is None:
+        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+
     try:
         # Convert Pydantic model to dict
         input_dict = input_data.dict()
+
+        # If ubigeo is not provided, calculate it from Departamento + Provincia
+        if input_dict.get('ubigeo') is None:
+            departamento = input_dict.get('Departamento')
+            provincia = input_dict.get('Provincia')
+
+            if not departamento or not provincia:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Debe proporcionar Departamento y Provincia, o un ubigeo válido"
+                )
+
+            # Get ubigeo from department and province
+            ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
+
+            if ubigeo is None:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No se encontró ubigeo para {departamento} - {provincia}"
+                )
+
+            input_dict['ubigeo'] = ubigeo
 
         # Validate input
         validation_result = predictor.validate_input(input_dict)
@@ -291,6 +326,71 @@ async def get_etapas():
             '40 - 59', '60 - 79', '80  +'
         ]
     }
+
+
+@app.get("/metadata/provincias/{departamento}")
+async def get_provincias(departamento: str):
+    """
+    Obtener lista de provincias para un departamento específico
+
+    Parameters:
+    - departamento: Nombre del departamento
+    """
+    if ubigeo_service is None:
+        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+
+    try:
+        provincias = ubigeo_service.get_provincias_by_departamento(departamento)
+
+        if not provincias:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontraron provincias para el departamento: {departamento}"
+            )
+
+        return {
+            "departamento": departamento.upper(),
+            "provincias": provincias
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting provinces: {str(e)}")
+
+
+@app.get("/metadata/ubigeo/{departamento}/{provincia}")
+async def get_ubigeo(departamento: str, provincia: str):
+    """
+    Obtener código de ubigeo para un departamento y provincia
+
+    Parameters:
+    - departamento: Nombre del departamento
+    - provincia: Nombre de la provincia
+    """
+    if ubigeo_service is None:
+        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+
+    try:
+        ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
+
+        if ubigeo is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No se encontró ubigeo para {departamento} - {provincia}"
+            )
+
+        location_info = ubigeo_service.get_location_info(ubigeo)
+
+        return {
+            "ubigeo": ubigeo,
+            "location": location_info
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting ubigeo: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(uvicorn:*)",
+      "Bash(timeout /t 5)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(taskkill /F /IM python.exe)"
     ],
     "deny": [],
     "ask": []

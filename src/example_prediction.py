@@ -1,6 +1,9 @@
 """
 Example Script - How to make predictions
 Run this after training a model to see example predictions
+
+NOTE: These examples use the internal model predictor directly.
+      For API usage examples, see the documentation or use the /docs endpoint.
 """
 
 import sys
@@ -10,6 +13,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.prediction import Predictor
+from src.services.ubigeo_service import get_ubigeo_service
 
 
 def main():
@@ -32,20 +36,34 @@ def main():
     print(f"\nLoading model from: {model_path}")
     predictor = Predictor(model_path)
 
+    # Load ubigeo service
+    print("Loading ubigeo service...")
+    ubigeo_service = get_ubigeo_service()
+
     # =========================================================================
-    # EXAMPLE 1: Single Prediction
+    # EXAMPLE 1: Single Prediction with Automatic Ubigeo Mapping
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 1: Single Prediction")
+    print("EXAMPLE 1: Single Prediction with Automatic Ubigeo Mapping")
     print("="*80)
 
+    # Get ubigeo from department and province
+    departamento = 'LIMA'
+    provincia = 'LIMA'
+    ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
+
+    print(f"\n🗺️  Location Mapping:")
+    print(f"   Departamento: {departamento}")
+    print(f"   Provincia: {provincia}")
+    print(f"   → Ubigeo: {ubigeo}")
+
     example_1 = {
-        'NroMes': 5,
-        'ubigeo': 150101,
-        'Departamento': 'LIMA',
-        'Sexo': 'F',
-        'Etapa': '30 - 39',
-        'DetalleTamizaje': 'TRASTORNO DEPRESIVO'
+        'NroMes': 11,
+        'ubigeo': ubigeo,
+        'Departamento': departamento,
+        'Sexo': 'M',
+        'Etapa': '5 - 9',
+        'DetalleTamizaje': 'VIOLENCIA FAMILIAR/MALTRATO INFANTIL'
     }
 
     print("\n📝 Input:")
@@ -65,9 +83,17 @@ def main():
     print("EXAMPLE 2: Batch Predictions")
     print("="*80)
 
+    # Prepare batch with ubigeo mapping
+    batch_locations = [
+        ('CUSCO', 'CUSCO'),
+        ('AREQUIPA', 'AREQUIPA'),
+        ('PIURA', 'PIURA')
+    ]
+
     examples_batch = [
         {
             'NroMes': 7,
+            'ubigeo': ubigeo_service.get_ubigeo_by_dept_prov('CUSCO', 'CUSCO'),
             'Departamento': 'CUSCO',
             'Sexo': 'M',
             'Etapa': '18 - 24',
@@ -75,6 +101,7 @@ def main():
         },
         {
             'NroMes': 3,
+            'ubigeo': ubigeo_service.get_ubigeo_by_dept_prov('AREQUIPA', 'AREQUIPA'),
             'Departamento': 'AREQUIPA',
             'Sexo': 'F',
             'Etapa': '40 - 59',
@@ -82,6 +109,7 @@ def main():
         },
         {
             'NroMes': 11,
+            'ubigeo': ubigeo_service.get_ubigeo_by_dept_prov('PIURA', 'PIURA'),
             'Departamento': 'PIURA',
             'Sexo': 'M',
             'Etapa': '25 - 29',
@@ -150,9 +178,12 @@ def main():
     print("\nComparing depression screening by age group in Lima (Female):")
     print("-"*80)
 
+    lima_ubigeo = ubigeo_service.get_ubigeo_by_dept_prov('LIMA', 'LIMA')
+
     for age in age_groups:
         test_input = {
             'NroMes': 6,
+            'ubigeo': lima_ubigeo,
             'Departamento': 'LIMA',
             'Sexo': 'F',
             'Etapa': age,

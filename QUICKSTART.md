@@ -35,11 +35,12 @@ uvicorn api.main:app --reload
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "NroMes": 5,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
   }'
 ```
 
@@ -50,11 +51,12 @@ import requests
 
 url = "http://localhost:8000/predict"
 data = {
-    "NroMes": 5,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
 }
 
 response = requests.post(url, json=data)
@@ -96,6 +98,12 @@ curl http://localhost:8000/metadata/departamentos
 
 # Ver tipos de tamizaje válidos
 curl http://localhost:8000/metadata/tamizajes
+
+# Ver provincias de un departamento
+curl http://localhost:8000/metadata/provincias/LIMA
+
+# Obtener ubigeo de departamento y provincia
+curl http://localhost:8000/metadata/ubigeo/LIMA/LIMA
 ```
 
 ## ⚠️ Solución de Problemas
@@ -146,20 +154,27 @@ uvicorn api.main:app --reload --port 8001
 | `/predict/batch` | POST | Predicciones en lote |
 | `/model/info` | GET | Información del modelo |
 | `/model/features` | GET | Features más importantes |
+| `/metadata/departamentos` | GET | Lista de departamentos válidos |
+| `/metadata/provincias/{dept}` | GET | Lista de provincias por departamento |
+| `/metadata/ubigeo/{dept}/{prov}` | GET | Obtener ubigeo de dept+provincia |
+| `/metadata/tamizajes` | GET | Tipos de tamizaje válidos |
+| `/metadata/etapas` | GET | Grupos etarios válidos |
 | `/health` | GET | Estado de la API |
 
 ## 💡 Ejemplo de Respuesta
 
 ```json
 {
-  "tasa_positividad_predicha": 8.45,
-  "interpretacion": "Riesgo Moderado - Incrementar disponibilidad de personal",
+  "tasa_positividad_predicha": 33.54,
+  "interpretacion": "Riesgo Muy Alto - Intervención urgente requerida",
   "input_data": {
-    "NroMes": 5,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL",
+    "ubigeo": 140101
   }
 }
 ```

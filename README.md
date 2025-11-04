@@ -22,15 +22,19 @@ backend-ml/
 ├── data/                          # Datos (NO incluir datasets completos en Git)
 │   ├── dataset_limpio.csv         # Datos después de limpieza
 │   ├── df_clean_to_model.csv      # Datos codificados
-│   └── dataset_balanceado.csv     # Datos balanceados
+│   ├── dataset_balanceado.csv     # Datos balanceados
+│   └── TB_UBIGEOS.csv            # Tabla de ubigeos del Perú
 │
 ├── src/                           # Código fuente
 │   ├── data_preparation.py        # Preparación y limpieza de datos
 │   ├── train_model.py            # Script de entrenamiento
-│   └── models/                    # Módulos del modelo
+│   ├── models/                    # Módulos del modelo
+│   │   ├── __init__.py
+│   │   ├── training.py            # Entrenamiento del modelo
+│   │   └── prediction.py          # Predicciones
+│   └── services/                  # Servicios adicionales
 │       ├── __init__.py
-│       ├── training.py            # Entrenamiento del modelo
-│       └── prediction.py          # Predicciones
+│       └── ubigeo_service.py      # Mapeo Departamento+Provincia→Ubigeo
 │
 ├── api/                           # API REST
 │   └── main.py                    # FastAPI application
@@ -130,6 +134,45 @@ Una vez iniciada la API, accede a:
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
 
+## 🗺️ Mapeo Automático de Ubicación
+
+El sistema utiliza un **servicio de mapeo automático** que convierte la combinación de **Departamento + Provincia** en el código **Ubigeo** correspondiente. Esto simplifica el uso de la API para aplicaciones frontend.
+
+### Cómo Funciona
+
+1. **Usuario envía**: Departamento + Provincia
+2. **Sistema mapea**: Busca el ubigeo correspondiente en TB_UBIGEOS.csv
+3. **Modelo recibe**: Código ubigeo para la predicción
+4. **Respuesta incluye**: Tanto los datos de entrada como el ubigeo calculado
+
+### Ventajas
+
+- **Interfaz amigable**: No necesitas conocer los códigos ubigeo
+- **Validación automática**: El sistema verifica que la combinación sea válida
+- **Transparente**: La respuesta muestra el ubigeo usado en la predicción
+
+### Endpoints de Ubicación
+
+```bash
+# Obtener provincias de un departamento
+GET /metadata/provincias/{departamento}
+
+# Obtener ubigeo de departamento + provincia
+GET /metadata/ubigeo/{departamento}/{provincia}
+```
+
+**Ejemplo:**
+
+```bash
+# Obtener provincias de LIMA
+curl http://localhost:8000/metadata/provincias/LIMA
+# Respuesta: {"departamento": "LIMA", "provincias": ["BARRANCA", "CAJATAMBO", ...]}
+
+# Obtener ubigeo de LIMA-LIMA
+curl http://localhost:8000/metadata/ubigeo/LIMA/LIMA
+# Respuesta: {"ubigeo": 140101, "location": {...}}
+```
+
 ## 📡 Endpoints de la API
 
 ### Predicción Individual
@@ -142,12 +185,12 @@ POST /predict
 
 ```json
 {
-  "NroMes": 5,
-  "ubigeo": 150101,
+  "NroMes": 11,
   "Departamento": "LIMA",
-  "Sexo": "F",
-  "Etapa": "30 - 39",
-  "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+  "Provincia": "LIMA",
+  "Sexo": "M",
+  "Etapa": "5 - 9",
+  "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
 }
 ```
 
@@ -155,15 +198,16 @@ POST /predict
 
 ```json
 {
-  "tasa_positividad_predicha": 8.45,
-  "interpretacion": "Riesgo Moderado - Incrementar disponibilidad de personal",
+  "tasa_positividad_predicha": 33.54,
+  "interpretacion": "Riesgo Muy Alto - Intervención urgente requerida",
   "input_data": {
-    "NroMes": 5,
-    "ubigeo": 150101,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL",
+    "ubigeo": 140101
   }
 }
 ```
@@ -180,18 +224,20 @@ POST /predict/batch
 {
   "predictions": [
     {
-      "NroMes": 5,
+      "NroMes": 11,
       "Departamento": "LIMA",
-      "Sexo": "F",
-      "Etapa": "30 - 39",
-      "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+      "Provincia": "LIMA",
+      "Sexo": "M",
+      "Etapa": "5 - 9",
+      "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
     },
     {
       "NroMes": 7,
       "Departamento": "CUSCO",
-      "Sexo": "M",
-      "Etapa": "18 - 24",
-      "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
+      "Provincia": "CUSCO",
+      "Sexo": "F",
+      "Etapa": "30 - 39",
+      "DetalleTamizaje": "TRASTORNO DEPRESIVO"
     }
   ]
 }
@@ -229,9 +275,11 @@ GET /model/features?top_n=10
 ### Metadatos
 
 ```bash
-GET /metadata/departamentos    # Lista de departamentos válidos
-GET /metadata/tamizajes        # Lista de tipos de tamizaje
-GET /metadata/etapas           # Lista de grupos etarios
+GET /metadata/departamentos           # Lista de departamentos válidos
+GET /metadata/provincias/{dept}       # Lista de provincias por departamento
+GET /metadata/ubigeo/{dept}/{prov}   # Obtener ubigeo de dept+provincia
+GET /metadata/tamizajes               # Lista de tipos de tamizaje
+GET /metadata/etapas                  # Lista de grupos etarios
 ```
 
 ### Health Check
@@ -247,12 +295,19 @@ GET /health
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "NroMes": 5,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
   }'
+
+# Obtener provincias de un departamento
+curl http://localhost:8000/metadata/provincias/LIMA
+
+# Obtener ubigeo de departamento + provincia
+curl http://localhost:8000/metadata/ubigeo/LIMA/LIMA
 
 # Health check
 curl http://localhost:8000/health

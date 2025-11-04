@@ -135,11 +135,12 @@ curl http://localhost:8000/
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{
-    "NroMes": 5,
+    "NroMes": 11,
     "Departamento": "LIMA",
-    "Sexo": "F",
-    "Etapa": "30 - 39",
-    "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
   }'
 ```
 
@@ -147,14 +148,22 @@ curl -X POST "http://localhost:8000/predict" \
 
 ```python
 from src.models.prediction import Predictor
+from src.services.ubigeo_service import get_ubigeo_service
 
+# Load model and ubigeo service
 predictor = Predictor('models/trained_model.pkl')
+ubigeo_service = get_ubigeo_service()
+
+# Get ubigeo from department and province
+ubigeo = ubigeo_service.get_ubigeo_by_dept_prov('LIMA', 'LIMA')
+
 result = predictor.predict_single({
-    'NroMes': 5,
+    'NroMes': 11,
+    'ubigeo': ubigeo,
     'Departamento': 'LIMA',
-    'Sexo': 'F',
-    'Etapa': '30 - 39',
-    'DetalleTamizaje': 'TRASTORNO DEPRESIVO'
+    'Sexo': 'M',
+    'Etapa': '5 - 9',
+    'DetalleTamizaje': 'VIOLENCIA FAMILIAR/MALTRATO INFANTIL'
 })
 print(result)
 ```

@@ -18,9 +18,11 @@
 ```
 backend-ml/
 ├── src/                # Source code modules
+│   ├── models/         # ML model classes
+│   └── services/       # Additional services (ubigeo mapping)
 ├── api/                # FastAPI application
 ├── models/             # Trained ML models
-├── data/               # Processed datasets
+├── data/               # Processed datasets (includes TB_UBIGEOS.csv)
 ├── tests/              # Unit tests
 ├── docs/               # Documentation
 └── notebooks/          # Jupyter notebooks
@@ -80,6 +82,13 @@ open http://localhost:8000/docs
 - ✅ Health check endpoint
 - ✅ Metadata endpoints
 - ✅ Error handling
+- ✅ Automatic Ubigeo mapping from Dept+Province
+
+### 5. Ubigeo Service (`src/services/ubigeo_service.py`)
+- ✅ Automatic mapping Departamento + Provincia → Ubigeo
+- ✅ Province listing by department
+- ✅ Location validation
+- ✅ Support for 1,892 ubigeos across Peru
 
 ## 🎯 API Endpoints
 
@@ -92,6 +101,8 @@ open http://localhost:8000/docs
 | `/model/info` | GET | Model information |
 | `/model/features` | GET | Feature importance |
 | `/metadata/departamentos` | GET | Valid departments |
+| `/metadata/provincias/{dept}` | GET | Provinces by department |
+| `/metadata/ubigeo/{dept}/{prov}` | GET | Ubigeo from dept+province |
 | `/metadata/tamizajes` | GET | Valid screening types |
 | `/metadata/etapas` | GET | Valid age groups |
 
@@ -110,14 +121,28 @@ open http://localhost:8000/docs
 
 ## 🔍 Input Format
 
+**With Automatic Ubigeo Mapping** (Recommended):
 ```json
 {
-  "NroMes": 5,
-  "ubigeo": 150101,
+  "NroMes": 11,
   "Departamento": "LIMA",
-  "Sexo": "F",
-  "Etapa": "30 - 39",
-  "DetalleTamizaje": "TRASTORNO DEPRESIVO"
+  "Provincia": "LIMA",
+  "Sexo": "M",
+  "Etapa": "5 - 9",
+  "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
+}
+```
+
+**Direct Ubigeo** (Optional):
+```json
+{
+  "NroMes": 11,
+  "ubigeo": 140101,
+  "Departamento": "LIMA",
+  "Provincia": "LIMA",
+  "Sexo": "M",
+  "Etapa": "5 - 9",
+  "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL"
 }
 ```
 
@@ -125,9 +150,17 @@ open http://localhost:8000/docs
 
 ```json
 {
-  "tasa_positividad_predicha": 8.45,
-  "interpretacion": "Riesgo Moderado - Incrementar disponibilidad de personal",
-  "input_data": { ... }
+  "tasa_positividad_predicha": 33.54,
+  "interpretacion": "Riesgo Muy Alto - Intervención urgente requerida",
+  "input_data": {
+    "NroMes": 11,
+    "Departamento": "LIMA",
+    "Provincia": "LIMA",
+    "Sexo": "M",
+    "Etapa": "5 - 9",
+    "DetalleTamizaje": "VIOLENCIA FAMILIAR/MALTRATO INFANTIL",
+    "ubigeo": 140101
+  }
 }
 ```
 
