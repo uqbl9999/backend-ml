@@ -66,3 +66,5 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+      # Avoid failing the workflow when code scanning is disabled in repo settings
+      continue-on-error: true
