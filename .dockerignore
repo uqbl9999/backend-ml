@@ -16,6 +16,9 @@ data/*.csv
 tamizajes.csv
 *.pkl
 
+# Keep model artifacts in build context (override *.pkl)
+!models/**
+
 # Notebooks
 notebooks/
 *.ipynb
