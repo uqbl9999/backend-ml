@@ -43,7 +43,7 @@ ENV/
 data/tamizajes.csv
 
 # Model Files (optional - large models might need Git LFS)
-models/*.pkl
+models/trained_model.pkl
 
 # OS
 .DS_Store
