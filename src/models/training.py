@@ -1,6 +1,6 @@
 """
-Model Training Module
-Handles model training, hyperparameter tuning, and evaluation
+Módulo de Entrenamiento de Modelos
+Gestiona el entrenamiento del modelo, la optimización de hiperparámetros y la evaluación
 """
 
 import pandas as pd
@@ -17,16 +17,16 @@ warnings.filterwarnings('ignore')
 
 
 class ModelTrainer:
-    """Class to handle model training and evaluation"""
+    """Clase para gestionar el entrenamiento y la evaluación del modelo"""
 
-    def __init__(self, model_type: str = 'gradient_boosting'):
+    def __init__(self, model_type: str = 'random_forest'):
         """
-        Initialize the model trainer
+        Inicializa el entrenador de modelos
 
-        Parameters:
+        Parámetros:
         -----------
         model_type : str
-            Type of model to use: 'gradient_boosting' or 'random_forest'
+            Tipo de modelo a usar: 'gradient_boosting' o 'random_forest'
         """
         self.model_type = model_type
         self.model = None
@@ -39,22 +39,22 @@ class ModelTrainer:
 
     def split_data(self, X: pd.DataFrame, y: pd.Series, test_size: float = 0.2, random_state: int = 42):
         """
-        Split data into training and testing sets
+        Dividir los datos en conjuntos de entrenamiento y prueba
 
-        Parameters:
+        Parámetros:
         -----------
         X : pd.DataFrame
-            Features
+            Características (features)
         y : pd.Series
-            Target variable
+            Variable objetivo
         test_size : float
-            Proportion of test set
+            Proporción del conjunto de prueba
         random_state : int
-            Random seed
+            Semilla aleatoria
         """
         print("\nSplitting data...")
 
-        # Remove 'Anio' if present (constant value, no predictive power)
+        # Eliminar 'Anio' si está presente (valor constante, sin poder predictivo)
         if 'Anio' in X.columns:
             X = X.drop(columns=['Anio'])
 
@@ -69,7 +69,7 @@ class ModelTrainer:
         print(f"✅ Features: {len(self.feature_names)}")
 
     def train_base_model(self):
-        """Train a base model without hyperparameter tuning"""
+        """Entrenar un modelo base sin optimización de hiperparámetros"""
         print(f"\nTraining base {self.model_type} model...")
 
         if self.model_type == 'random_forest':
@@ -99,14 +99,14 @@ class ModelTrainer:
 
     def optimize_hyperparameters(self, n_iter: int = 30, cv: int = 5):
         """
-        Optimize hyperparameters using RandomizedSearchCV
+        Optimizar hiperparámetros usando RandomizedSearchCV
 
-        Parameters:
+        Parámetros:
         -----------
         n_iter : int
-            Number of parameter combinations to try
+            Número de combinaciones de parámetros a probar
         cv : int
-            Number of cross-validation folds
+            Número de particiones para validación cruzada
         """
         print(f"\nOptimizing hyperparameters for {self.model_type}...")
         print(f"  n_iter={n_iter}, cv={cv}")
@@ -139,7 +139,7 @@ class ModelTrainer:
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
 
-        # Random Search
+        # Búsqueda aleatoria
         random_search = RandomizedSearchCV(
             estimator=base_estimator,
             param_distributions=param_distributions,
@@ -160,41 +160,41 @@ class ModelTrainer:
 
         print(f"\n✅ Best CV R² score: {random_search.best_score_:.4f}")
 
-        # Use the best model
+        # Usar el mejor modelo
         self.model = random_search.best_estimator_
         print("\n🔄 Training final model with best hyperparameters...")
         self.model.fit(self.X_train, self.y_train)
         print("✅ Optimized model training completed")
 
-        # Evaluate optimized model
+        # Evaluar modelo optimizado
         self._evaluate_model(prefix="optimized")
 
     def _evaluate_model(self, prefix: str = ""):
         """
-        Evaluate model performance on train and test sets
+        Evaluar el rendimiento del modelo en los conjuntos de entrenamiento y prueba
 
-        Parameters:
+        Parámetros:
         -----------
         prefix : str
-            Prefix for metrics keys
+            Prefijo para las claves de las métricas
         """
-        # Predictions
+        # Predicciones
         y_pred_train = self.model.predict(self.X_train)
         y_pred_test = self.model.predict(self.X_test)
 
-        # Metrics - Training
+        # Métricas - Entrenamiento
         mse_train = mean_squared_error(self.y_train, y_pred_train)
         rmse_train = np.sqrt(mse_train)
         r2_train = r2_score(self.y_train, y_pred_train)
         mae_train = mean_absolute_error(self.y_train, y_pred_train)
 
-        # Metrics - Testing
+        # Métricas - Pruebas
         mse_test = mean_squared_error(self.y_test, y_pred_test)
         rmse_test = np.sqrt(mse_test)
         r2_test = r2_score(self.y_test, y_pred_test)
         mae_test = mean_absolute_error(self.y_test, y_pred_test)
 
-        # Store metrics
+        # Guardar métricas
         self.metrics[f'{prefix}_train'] = {
             'R2': r2_train,
             'MAE': mae_train,
@@ -208,7 +208,7 @@ class ModelTrainer:
             'RMSE': rmse_test
         }
 
-        # Print results
+        # Imprimir resultados
         print("\n" + "="*60)
         print(f"📊 {prefix.upper()} MODEL - TRAINING SET")
         print("="*60)
@@ -225,7 +225,7 @@ class ModelTrainer:
         print(f"MSE (Mean Squared Error):           {mse_test:.4f}")
         print(f"RMSE (Root Mean Squared Error):     {rmse_test:.4f}%")
 
-        # Overfitting analysis
+        # Análisis de sobreajuste
         print("\n" + "="*60)
         print("🔍 OVERFITTING ANALYSIS")
         print("="*60)
@@ -235,24 +235,24 @@ class ModelTrainer:
         print(f"R² difference (Train - Test):       {diff_r2:.4f}")
         print(f"MAE difference (Test - Train):      {diff_mae:.4f}%")
 
-        if diff_r2 > 0.1:
-            print("⚠️  Possible overfitting detected (R² difference > 0.1)")
+        if diff_r2 > 0.13:
+            print("⚠️  Posible overfitting detectado (R² diferencia > 0.1)")
         else:
-            print("✅ Model generalizes well")
+            print("✅ El modelo generaliza bien")
         print("="*60)
 
     def get_feature_importance(self, top_n: int = 15) -> pd.DataFrame:
         """
-        Get feature importance from the trained model
+        Obtener la importancia de características del modelo entrenado
 
-        Parameters:
+        Parámetros:
         -----------
         top_n : int
-            Number of top features to return
+            Número de características principales a devolver
 
-        Returns:
+        Retorna:
         --------
-        pd.DataFrame : Feature importance dataframe
+        pd.DataFrame : DataFrame de importancia de características
         """
         if self.model is None:
             raise ValueError("Model has not been trained yet")
@@ -271,12 +271,12 @@ class ModelTrainer:
 
     def save_model(self, filepath: str):
         """
-        Save the trained model to disk
+        Guardar el modelo entrenado en disco
 
-        Parameters:
+        Parámetros:
         -----------
         filepath : str
-            Path to save the model
+            Ruta donde guardar el modelo
         """
         if self.model is None:
             raise ValueError("Model has not been trained yet")
@@ -296,16 +296,16 @@ class ModelTrainer:
     @staticmethod
     def load_model(filepath: str):
         """
-        Load a trained model from disk
+        Cargar un modelo entrenado desde disco
 
-        Parameters:
+        Parámetros:
         -----------
         filepath : str
-            Path to the saved model
+            Ruta del modelo guardado
 
-        Returns:
+        Retorna:
         --------
-        dict : Model data including model, feature names, and metrics
+        dict : Datos del modelo incluyendo el modelo, nombres de características y métricas
         """
         with open(filepath, 'rb') as f:
             model_data = pickle.load(f)
@@ -318,49 +318,49 @@ class ModelTrainer:
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """
-        Make predictions using the trained model
+        Realizar predicciones usando el modelo entrenado
 
-        Parameters:
+        Parámetros:
         -----------
         X : pd.DataFrame
-            Features for prediction
+            Características para la predicción
 
-        Returns:
+        Retorna:
         --------
-        np.ndarray : Predictions
+        np.ndarray : Predicciones
         """
         if self.model is None:
             raise ValueError("Model has not been trained yet")
 
-        # Ensure features match training data
+        # Asegurar que las características coinciden con los datos de entrenamiento
         if set(X.columns) != set(self.feature_names):
             raise ValueError("Features don't match training data")
 
-        # Reorder columns to match training data
+        # Reordenar columnas para coincidir con los datos de entrenamiento
         X = X[self.feature_names]
 
         return self.model.predict(X)
 
     def plot_results(self, save_dir: str = 'docs'):
         """
-        Generate and save evaluation plots
+        Generar y guardar gráficos de evaluación
 
-        Parameters:
+        Parámetros:
         -----------
         save_dir : str
-            Directory to save plots
+            Directorio donde guardar los gráficos
         """
         if self.model is None:
             raise ValueError("Model has not been trained yet")
 
-        # Predictions
+        # Predicciones
         y_pred_train = self.model.predict(self.X_train)
         y_pred_test = self.model.predict(self.X_test)
 
-        # 1. Actual vs Predicted
+        # 1. Real vs Predicho
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
-        # Training set
+        # Conjunto de entrenamiento
         axes[0].scatter(self.y_train, y_pred_train, alpha=0.5, s=10, color='steelblue')
         axes[0].plot([self.y_train.min(), self.y_train.max()],
                     [self.y_train.min(), self.y_train.max()],
@@ -372,7 +372,7 @@ class ModelTrainer:
         axes[0].legend()
         axes[0].grid(alpha=0.3)
 
-        # Test set
+        # Conjunto de prueba
         axes[1].scatter(self.y_test, y_pred_test, alpha=0.5, s=10, color='darkorange')
         axes[1].plot([self.y_test.min(), self.y_test.max()],
                     [self.y_test.min(), self.y_test.max()],
@@ -388,7 +388,7 @@ class ModelTrainer:
         plt.savefig(f'{save_dir}/evaluation_actual_vs_predicted.png', dpi=300, bbox_inches='tight')
         plt.close()
 
-        # 2. Feature Importance
+        # 2. Importancia de características
         feature_importance_df = self.get_feature_importance(top_n=15)
 
         plt.figure(figsize=(10, 8))

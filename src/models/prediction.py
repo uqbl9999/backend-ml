@@ -1,6 +1,6 @@
 """
-Prediction Module
-Handles predictions using the trained model
+Módulo de Predicción
+Gestiona predicciones usando el modelo entrenado
 """
 
 import pandas as pd
@@ -10,7 +10,7 @@ from typing import Dict, List
 
 
 class Predictor:
-    """Class to handle predictions with the trained model"""
+    """Clase para gestionar predicciones con el modelo entrenado"""
 
     def __init__(self, model_path: str):
         """
@@ -29,7 +29,7 @@ class Predictor:
         self.load_model()
 
     def load_model(self):
-        """Load the trained model from disk"""
+        """Cargar el modelo entrenado desde disco"""
         with open(self.model_path, 'rb') as f:
             model_data = pickle.load(f)
 
@@ -44,7 +44,7 @@ class Predictor:
 
     def _prepare_features(self, input_data: Dict) -> pd.DataFrame:
         """
-        Prepare features from input data dictionary
+        Preparar features a partir del diccionario de entrada
 
         Parameters:
         -----------
@@ -55,34 +55,34 @@ class Predictor:
         --------
         pd.DataFrame : Prepared features
         """
-        # Create a dataframe with all features initialized to 0
+        # Crear un DataFrame con todas las features inicializadas en 0
         feature_dict = {feature: 0 for feature in self.feature_names}
 
-        # Update with input data
+        # Actualizar con datos de entrada
         for key, value in input_data.items():
             if key in feature_dict:
                 feature_dict[key] = value
             else:
-                # Handle categorical variables (one-hot encoded)
-                # e.g., "Departamento" : "LIMA" -> "Departamento_LIMA" : 1
+                # Manejar variables categóricas (one-hot encoded)
+                # p. ej., "Departamento" : "LIMA" -> "Departamento_LIMA" : 1
                 matching_features = [f for f in self.feature_names if f.startswith(f"{key}_")]
                 if matching_features:
-                    # Reset all categories for this feature
+                    # Restablecer todas las categorías para esta feature
                     for f in matching_features:
                         feature_dict[f] = 0
-                    # Set the specific category
+                    # Establecer la categoría específica
                     specific_feature = f"{key}_{value}"
                     if specific_feature in feature_dict:
                         feature_dict[specific_feature] = 1
 
-        # Create DataFrame
+        # Crear DataFrame
         df = pd.DataFrame([feature_dict])
 
-        return df[self.feature_names]  # Ensure correct column order
+        return df[self.feature_names]  # Asegurar orden correcto de columnas
 
     def predict_single(self, input_data: Dict) -> Dict:
         """
-        Make a prediction for a single input
+        Hacer una predicción para una sola entrada
 
         Parameters:
         -----------
@@ -121,7 +121,7 @@ class Predictor:
 
     def predict_batch(self, input_data_list: List[Dict]) -> List[Dict]:
         """
-        Make predictions for multiple inputs
+        Hacer predicciones para múltiples entradas
 
         Parameters:
         -----------
@@ -143,7 +143,7 @@ class Predictor:
     @staticmethod
     def _interpret_prediction(prediction: float) -> str:
         """
-        Interpret the prediction value
+        Interpretar el valor de la predicción
 
         Parameters:
         -----------
@@ -167,7 +167,7 @@ class Predictor:
 
     def get_feature_importance(self, top_n: int = 10) -> List[Dict]:
         """
-        Get top N most important features
+        Obtener las N características más importantes
 
         Parameters:
         -----------
@@ -185,14 +185,14 @@ class Predictor:
             for feature, importance in zip(self.feature_names, importances)
         ]
 
-        # Sort by importance
+        # Ordenar por importancia
         feature_importance.sort(key=lambda x: x['importance'], reverse=True)
 
         return feature_importance[:top_n]
 
     def get_model_info(self) -> Dict:
         """
-        Get information about the loaded model
+        Obtener información sobre el modelo cargado
 
         Returns:
         --------
@@ -208,7 +208,7 @@ class Predictor:
 
     def validate_input(self, input_data: Dict) -> Dict:
         """
-        Validate input data
+        Validar datos de entrada
 
         Parameters:
         -----------
@@ -221,19 +221,19 @@ class Predictor:
         """
         errors = []
 
-        # Required fields (examples - adjust based on your data)
+        # Campos requeridos (ejemplos - ajuste según sus datos)
         required_fields = ['NroMes', 'Departamento', 'Sexo', 'Etapa', 'DetalleTamizaje']
 
         for field in required_fields:
             if field not in input_data:
                 errors.append(f"Missing required field: {field}")
 
-        # Validate NroMes (1-12)
+        # Validar NroMes (1-12)
         if 'NroMes' in input_data:
             if not isinstance(input_data['NroMes'], int) or input_data['NroMes'] < 1 or input_data['NroMes'] > 12:
                 errors.append("NroMes must be an integer between 1 and 12")
 
-        # Validate ubigeo if present
+        # Validar ubigeo si está presente
         if 'ubigeo' in input_data:
             if not isinstance(input_data['ubigeo'], int):
                 errors.append("ubigeo must be an integer")

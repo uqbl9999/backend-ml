@@ -1,38 +1,38 @@
 """
-Training Script
-Run this script to train the model from scratch
+Script de Entrenamiento
+Ejecuta este script para entrenar el modelo desde cero
 """
 
 import sys
 import os
 import argparse
 
-# Add current directory to path
+# Agregar el directorio actual al path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.data_preparation import DataPreparation
 from src.models.training import ModelTrainer
 
 
-def main(data_path: str, model_type: str = 'gradient_boosting', optimize: bool = True):
+def main(data_path: str, model_type: str = 'random_forest', optimize: bool = True):
     """
-    Main training pipeline
+    Flujo principal de entrenamiento
 
-    Parameters:
+    Parámetros:
     -----------
     data_path : str
-        Path to the raw data CSV file
+        Ruta al archivo CSV de datos crudos
     model_type : str
-        Type of model: 'gradient_boosting' or 'random_forest'
+        Tipo de modelo: 'gradient_boosting' o 'random_forest'
     optimize : bool
-        Whether to perform hyperparameter optimization
+        Si se debe realizar optimización de hiperparámetros
     """
     print("="*80)
     print("MENTAL HEALTH SCREENING PREDICTION - MODEL TRAINING")
     print("="*80)
 
     # =========================================================================
-    # PHASE 1: DATA PREPARATION
+    # FASE 1: PREPARACIÓN DE DATOS
     # =========================================================================
     print("\n" + "="*80)
     print("PHASE 1: DATA PREPARATION")
@@ -45,7 +45,7 @@ def main(data_path: str, model_type: str = 'gradient_boosting', optimize: bool =
     print(f"   Final dataset: {X_balanced.shape[0]:,} rows x {X_balanced.shape[1]} columns")
 
     # =========================================================================
-    # PHASE 2: MODEL TRAINING
+    # FASE 2: ENTRENAMIENTO DEL MODELO
     # =========================================================================
     print("\n" + "="*80)
     print("PHASE 2: MODEL TRAINING")
@@ -53,45 +53,45 @@ def main(data_path: str, model_type: str = 'gradient_boosting', optimize: bool =
 
     trainer = ModelTrainer(model_type=model_type)
 
-    # Split data
+    # Dividir datos
     trainer.split_data(X_balanced, y_balanced, test_size=0.2, random_state=42)
 
-    # Train base model
+    # Entrenar modelo base
     trainer.train_base_model()
 
-    # Optimize hyperparameters
+    # Optimizar hiperparámetros
     if optimize:
         trainer.optimize_hyperparameters(n_iter=30, cv=5)
 
     # =========================================================================
-    # PHASE 3: SAVE MODEL
+    # FASE 3: GUARDAR MODELO
     # =========================================================================
     print("\n" + "="*80)
     print("PHASE 3: SAVE MODEL")
     print("="*80)
 
-    # Create models directory if it doesn't exist
+    # Crear el directorio 'models' si no existe
     os.makedirs('models', exist_ok=True)
 
-    # Save model
+    # Guardar modelo
     model_filename = f'models/trained_model.pkl'
     trainer.save_model(model_filename)
 
     # =========================================================================
-    # PHASE 4: GENERATE EVALUATION PLOTS
+    # FASE 4: GENERAR GRÁFICOS DE EVALUACIÓN
     # =========================================================================
     print("\n" + "="*80)
     print("PHASE 4: GENERATE EVALUATION PLOTS")
     print("="*80)
 
-    # Create docs directory if it doesn't exist
+    # Crear el directorio 'docs' si no existe
     os.makedirs('docs', exist_ok=True)
 
-    # Generate plots
+    # Generar gráficos
     trainer.plot_results(save_dir='docs')
 
     # =========================================================================
-    # SUMMARY
+    # RESUMEN
     # =========================================================================
     print("\n" + "="*80)
     print("TRAINING COMPLETED!")
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train mental health screening prediction model')
     parser.add_argument('--data', type=str, default='tamizajes.csv',
                        help='Path to raw data CSV file')
-    parser.add_argument('--model', type=str, default='gradient_boosting',
+    parser.add_argument('--model', type=str, default='random_forest',
                        choices=['gradient_boosting', 'random_forest'],
                        help='Type of model to train')
     parser.add_argument('--no-optimize', action='store_true',

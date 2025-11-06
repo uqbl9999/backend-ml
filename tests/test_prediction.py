@@ -1,35 +1,35 @@
 """
-Unit tests for the prediction module
+Pruebas unitarias para el módulo de predicción
 """
 
 import pytest
 import sys
 import os
 
-# Add src to path
+# Agregar 'src' al path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-# Note: These tests require a trained model to be present
-# Run python src/train_model.py first
+# Nota: Estas pruebas requieren que exista un modelo entrenado
+# Ejecutar primero: python src/train_model.py
 
 
 def test_import_modules():
-    """Test that all modules can be imported"""
+    """Probar que todos los módulos se pueden importar"""
     try:
         from src.data_preparation import DataPreparation
         from src.models.training import ModelTrainer
         from src.models.prediction import Predictor
         assert True
     except ImportError as e:
-        pytest.fail(f"Failed to import modules: {e}")
+        pytest.fail(f"Fallo al importar módulos: {e}")
 
 
 def test_prediction_input_validation():
-    """Test input validation for predictions"""
-    # This test checks that our API validation logic works
+    """Probar la validación de entrada para predicciones"""
+    # Esta prueba verifica que la lógica de validación de la API funciona
     required_fields = ['NroMes', 'Departamento', 'Sexo', 'Etapa', 'DetalleTamizaje']
 
-    # Valid input
+    # Entrada válida
     valid_input = {
         'NroMes': 5,
         'Departamento': 'LIMA',
@@ -38,19 +38,19 @@ def test_prediction_input_validation():
         'DetalleTamizaje': 'TRASTORNO DEPRESIVO'
     }
 
-    # Check all required fields are present
+    # Verificar que todos los campos requeridos estén presentes
     for field in required_fields:
         assert field in valid_input, f"Missing required field: {field}"
 
-    # Check NroMes range
-    assert 1 <= valid_input['NroMes'] <= 12, "NroMes must be between 1 and 12"
+    # Verificar rango de NroMes
+    assert 1 <= valid_input['NroMes'] <= 12, "NroMes debe estar entre 1 y 12"
 
-    # Check Sexo
-    assert valid_input['Sexo'] in ['F', 'M'], "Sexo must be F or M"
+    # Verificar Sexo
+    assert valid_input['Sexo'] in ['F', 'M'], "Sexo debe ser F o M"
 
 
 def test_departamentos_list():
-    """Test that the list of valid departamentos is correct"""
+    """Probar que la lista de departamentos válidos es correcta"""
     departamentos_validos = [
         'ANCASH', 'APURIMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA',
         'CALLAO', 'CUSCO', 'HUANCAVELICA', 'HUANUCO', 'ICA',
@@ -65,7 +65,7 @@ def test_departamentos_list():
 
 
 def test_tipos_tamizaje_list():
-    """Test that the list of valid screening types is correct"""
+    """Probar que la lista de tipos de tamizaje válidos es correcta"""
     tipos_validos = [
         'SINDROME Y/O TRASTORNO PSICOTICO',
         'TRASTORNO DE CONSUMO DE ALCOHOL Y OTROS DROGAS',
@@ -81,7 +81,7 @@ def test_tipos_tamizaje_list():
 @pytest.mark.skipif(not os.path.exists('models/trained_model.pkl'),
                    reason="Trained model not found")
 def test_load_model():
-    """Test that the model can be loaded"""
+    """Probar que el modelo puede cargarse"""
     from src.models.prediction import Predictor
 
     try:
@@ -90,13 +90,13 @@ def test_load_model():
         assert predictor.feature_names is not None
         assert len(predictor.feature_names) > 0
     except Exception as e:
-        pytest.fail(f"Failed to load model: {e}")
+        pytest.fail(f"Fallo al cargar el modelo: {e}")
 
 
 @pytest.mark.skipif(not os.path.exists('models/trained_model.pkl'),
                    reason="Trained model not found")
 def test_make_prediction():
-    """Test that predictions can be made"""
+    """Probar que se pueden realizar predicciones"""
     from src.models.prediction import Predictor
 
     predictor = Predictor('models/trained_model.pkl')
@@ -116,7 +116,7 @@ def test_make_prediction():
     assert 'interpretacion' in result
     assert 'input_data' in result
 
-    # Check prediction is in valid range
+    # Verificar que la predicción esté en un rango válido
     assert 0 <= result['tasa_positividad_predicha'] <= 100
 
 

@@ -1,6 +1,6 @@
 """
-Data Preparation Module
-Handles data loading, cleaning, and preprocessing for mental health screening predictions
+Módulo de Preparación de Datos
+Gestiona la carga, limpieza y preprocesamiento para predicciones de tamizaje de salud mental
 """
 
 import pandas as pd
@@ -11,7 +11,7 @@ warnings.filterwarnings('ignore')
 
 
 class DataPreparation:
-    """Class to handle all data preparation steps"""
+    """Clase para gestionar todas las etapas de preparación de datos"""
 
     def __init__(self, data_path: str):
         """
@@ -29,7 +29,7 @@ class DataPreparation:
         self.df_encoded = None
 
     def load_data(self) -> pd.DataFrame:
-        """Load raw data from CSV file"""
+        """Cargar datos crudos desde archivo CSV"""
         print("Loading data...")
         self.df = pd.read_csv(self.data_path, sep=';', encoding='latin1')
         print(f"✅ Dataset loaded: {self.df.shape[0]:,} rows x {self.df.shape[1]} columns")
@@ -42,28 +42,28 @@ class DataPreparation:
         """
         print("\nCalculating positivity rate...")
 
-        # Convert 'Casos' to numeric if needed
+        # Convertir 'Casos' a numérico si es necesario
         if self.df['Casos'].dtype == 'object':
             self.df['Casos'] = self.df['Casos'].astype(str).str.replace(',', '').str.replace(' ', '')
             self.df['Casos'] = pd.to_numeric(self.df['Casos'], errors='coerce')
             self.df['Casos'] = self.df['Casos'].fillna(0)
 
-        # Separate TOTAL and POSITIVOS records
+        # Separar registros de TOTAL y POSITIVOS
         df_total = self.df[self.df['GrupoTamizaje'].str.contains('TOTAL', case=False, na=False)].copy()
         df_positivos = self.df[self.df['GrupoTamizaje'].str.contains('POSITIVOS', case=False, na=False)].copy()
 
         print(f"  Total records: {len(df_total):,}")
         print(f"  Positive records: {len(df_positivos):,}")
 
-        # Rename columns
+        # Renombrar columnas
         df_total = df_total.rename(columns={'Casos': 'Total'})
         df_positivos = df_positivos.rename(columns={'Casos': 'Positivos'})
 
-        # Drop GrupoTamizaje column
+        # Eliminar columna GrupoTamizaje
         df_total = df_total.drop(columns=['GrupoTamizaje'])
         df_positivos = df_positivos.drop(columns=['GrupoTamizaje'])
 
-        # Merge datasets
+        # Unir datasets
         join_columns = ['Anio', 'NroMes', 'ubigeo', 'Departamento', 'Provincia',
                        'Distrito', 'Sexo', 'Etapa', 'DetalleTamizaje']
 
@@ -73,7 +73,7 @@ class DataPreparation:
             how='left'
         )
 
-        # Fill NaN and calculate rate
+        # Rellenar NaN y calcular tasa
         self.df_pivot['Positivos'] = self.df_pivot['Positivos'].fillna(0)
         self.df_pivot['Tasa_Positividad'] = np.where(
             self.df_pivot['Total'] > 0,
@@ -81,7 +81,7 @@ class DataPreparation:
             0
         )
 
-        # Remove rows where Total = 0
+        # Eliminar filas donde Total = 0
         self.df_pivot = self.df_pivot[self.df_pivot['Total'] > 0].copy()
 
         print(f"✅ Positivity rate calculated: {self.df_pivot.shape[0]:,} rows")
@@ -91,14 +91,14 @@ class DataPreparation:
 
     def clean_data(self) -> pd.DataFrame:
         """
-        Remove impossible values (Tasa_Positividad > 100%)
+        Eliminar valores imposibles (Tasa_Positividad > 100%)
         """
         print("\nCleaning data...")
 
         before_count = len(self.df_pivot)
         before_avg = self.df_pivot['Tasa_Positividad'].mean()
 
-        # Remove impossible rates
+        # Eliminar tasas imposibles
         self.df_clean = self.df_pivot[self.df_pivot['Tasa_Positividad'] <= 100].copy()
 
         removed_count = before_count - len(self.df_clean)
@@ -112,8 +112,8 @@ class DataPreparation:
 
     def feature_engineering(self) -> pd.DataFrame:
         """
-        Apply one-hot encoding to categorical variables
-        and drop unnecessary columns
+        Aplicar one-hot encoding a variables categóricas
+        y eliminar columnas innecesarias
         """
         print("\nApplying feature engineering...")
 
@@ -121,7 +121,7 @@ class DataPreparation:
         multi_cat_cols = ["Departamento", "Sexo", "DetalleTamizaje", "Etapa"]
         self.df_encoded = pd.get_dummies(self.df_clean, columns=multi_cat_cols, dtype=int)
 
-        # Drop unnecessary columns
+        # Eliminar columnas innecesarias
         self.df_encoded = self.df_encoded.drop(columns=['Provincia', 'Distrito'])
 
         print(f"✅ Features encoded: {self.df_encoded.shape}")
@@ -130,8 +130,8 @@ class DataPreparation:
 
     def balance_data(self, zero_ratio: float = 0.3, oversample_factor: float = 2) -> tuple:
         """
-        Balance the dataset using undersampling for zeros and
-        SMOTE-like oversampling for positives
+        Balancear el dataset usando submuestreo para ceros y
+        sobre-muestreo tipo SMOTE para positivos
 
         Parameters:
         -----------
@@ -159,7 +159,7 @@ class DataPreparation:
 
         print(f"  Original - Zeros: {len(y_zero):,} | Positives: {len(y_non_zero):,}")
 
-        # STEP 1: Undersample zeros
+        # PASO 1: Submuestrear ceros
         n_zeros_keep = int(len(y_non_zero) / (1 - zero_ratio) * zero_ratio)
         if n_zeros_keep < len(y_zero):
             zero_indices = np.random.choice(len(y_zero), n_zeros_keep, replace=False)
@@ -171,7 +171,7 @@ class DataPreparation:
 
         print(f"  Undersampled - Zeros kept: {len(y_zero_sampled):,}")
 
-        # STEP 2: Oversample positives (SMOTE-like)
+        # PASO 2: Sobremuestrear positivos (tipo SMOTE)
         n_synthetic = int(len(X_non_zero) * (oversample_factor - 1))
         k = min(5, len(X_non_zero) - 1)
 
@@ -206,7 +206,7 @@ class DataPreparation:
             synthetic_X.append(synthetic_sample_X)
             synthetic_y.append(synthetic_sample_y)
 
-        # Combine all data
+        # Combinar todos los datos
         synthetic_X_df = pd.DataFrame(synthetic_X, columns=X.columns)
         synthetic_y_series = pd.Series(synthetic_y, name='Tasa_Positividad')
 
@@ -220,7 +220,7 @@ class DataPreparation:
 
     def prepare_full_pipeline(self, save_intermediate: bool = True) -> tuple:
         """
-        Run the complete data preparation pipeline
+        Ejecutar el pipeline completo de preparación de datos
 
         Parameters:
         -----------
@@ -231,19 +231,19 @@ class DataPreparation:
         --------
         tuple : (X_balanced, y_balanced)
         """
-        # Load data
+        # Cargar datos
         self.load_data()
 
-        # Calculate positivity rate
+        # Calcular tasa de positividad
         self.calculate_positivity_rate()
 
-        # Clean data
+        # Limpiar datos
         self.clean_data()
         if save_intermediate:
             self.df_clean.to_csv('data/dataset_limpio.csv', index=False, encoding='utf-8-sig')
             print(f"💾 Saved: data/dataset_limpio.csv")
 
-        # Feature engineering
+        # Ingeniería de características
         self.feature_engineering()
         if save_intermediate:
             self.df_encoded.to_csv('data/df_clean_to_model.csv', index=False, encoding='utf-8-sig')

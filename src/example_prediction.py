@@ -1,15 +1,15 @@
 """
-Example Script - How to make predictions
-Run this after training a model to see example predictions
+Script de Ejemplo - Cómo hacer predicciones
+Ejecuta esto después de entrenar un modelo para ver predicciones de ejemplo
 
-NOTE: These examples use the internal model predictor directly.
-      For API usage examples, see the documentation or use the /docs endpoint.
+NOTA: Estos ejemplos usan el predictor interno del modelo directamente.
+      Para ejemplos de uso de la API, consulta la documentación o usa el endpoint /docs.
 """
 
 import sys
 import os
 
-# Add current directory to path
+# Agregar directorio actual al path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.models.prediction import Predictor
@@ -18,13 +18,13 @@ from src.services.ubigeo_service import get_ubigeo_service
 
 def main():
     """
-    Example of how to use the Predictor class
+    Ejemplo de cómo usar la clase Predictor
     """
     print("="*80)
     print("EXAMPLE PREDICTIONS")
     print("="*80)
 
-    # Load the trained model
+    # Cargar el modelo entrenado
     model_path = 'models/trained_model.pkl'
 
     if not os.path.exists(model_path):
@@ -36,18 +36,18 @@ def main():
     print(f"\nLoading model from: {model_path}")
     predictor = Predictor(model_path)
 
-    # Load ubigeo service
+    # Cargar servicio de ubigeo
     print("Loading ubigeo service...")
     ubigeo_service = get_ubigeo_service()
 
     # =========================================================================
-    # EXAMPLE 1: Single Prediction with Automatic Ubigeo Mapping
+    # EJEMPLO 1: Predicción única con mapeo automático de Ubigeo
     # =========================================================================
     print("\n" + "="*80)
     print("EXAMPLE 1: Single Prediction with Automatic Ubigeo Mapping")
     print("="*80)
 
-    # Get ubigeo from department and province
+    # Obtener ubigeo desde departamento y provincia
     departamento = 'LIMA'
     provincia = 'LIMA'
     ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
@@ -77,13 +77,13 @@ def main():
     print(f"   Interpretación: {result_1['interpretacion']}")
 
     # =========================================================================
-    # EXAMPLE 2: Multiple Predictions
+    # EJEMPLO 2: Predicciones múltiples
     # =========================================================================
     print("\n" + "="*80)
     print("EXAMPLE 2: Batch Predictions")
     print("="*80)
 
-    # Prepare batch with ubigeo mapping
+    # Preparar lote con mapeo de ubigeo
     batch_locations = [
         ('CUSCO', 'CUSCO'),
         ('AREQUIPA', 'AREQUIPA'),
@@ -131,7 +131,7 @@ def main():
         print(f"   → {result['interpretacion']}")
 
     # =========================================================================
-    # EXAMPLE 3: Feature Importance
+    # EJEMPLO 3: Importancia de características
     # =========================================================================
     print("\n" + "="*80)
     print("EXAMPLE 3: Most Important Features")
@@ -148,7 +148,7 @@ def main():
         print(f"{i:2}. {feature_name:50} {importance:.4f}")
 
     # =========================================================================
-    # EXAMPLE 4: Model Information
+    # EJEMPLO 4: Información del modelo
     # =========================================================================
     print("\n" + "="*80)
     print("EXAMPLE 4: Model Information")
@@ -167,7 +167,7 @@ def main():
         print(f"   RMSE: {test_metrics['RMSE']:.4f}%")
 
     # =========================================================================
-    # EXAMPLE 5: Comparing Different Scenarios
+    # EJEMPLO 5: Comparando diferentes escenarios
     # =========================================================================
     print("\n" + "="*80)
     print("EXAMPLE 5: Comparing Different Age Groups")

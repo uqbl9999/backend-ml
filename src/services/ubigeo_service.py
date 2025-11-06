@@ -1,6 +1,6 @@
 """
-Ubigeo Service
-Handles mapping between Department+Province and Ubigeo codes
+Servicio de Ubigeo
+Gestiona el mapeo entre Departamento+Provincia y códigos de Ubigeo
 """
 
 import pandas as pd
@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 
 class UbigeoService:
-    """Service to handle ubigeo mappings"""
+    """Servicio para gestionar mapeos de ubigeo"""
 
     def __init__(self, ubigeo_file_path: str):
         """
@@ -25,30 +25,30 @@ class UbigeoService:
         self.load_ubigeos()
 
     def load_ubigeos(self):
-        """Load the ubigeos CSV file"""
+        """Cargar el archivo CSV de ubigeos"""
         try:
-            # Try different encodings
+            # Probar diferentes codificaciones
             encodings = ['iso-8859-1', 'latin-1', 'cp1252', 'utf-8']
 
             for encoding in encodings:
                 try:
-                    # Read the file line by line to handle the special format
-                    # Each line is wrapped in quotes: "field1\tfield2\tfield3"
+                    # Leer el archivo línea por línea para manejar el formato especial
+                    # Cada línea viene entre comillas: "campo1\tcampo2\tcampo3"
                     lines = []
                     with open(self.ubigeo_file_path, 'r', encoding=encoding) as f:
                         for line in f:
-                            # Remove quotes and trailing newline
+                            # Eliminar comillas y salto de línea final
                             line = line.strip().strip('"')
-                            # Split by tab
+                            # Separar por tabulación
                             fields = line.split('\t')
-                            # Take only first 4 fields (ubigeo, departamento, provincia, distrito)
+                            # Tomar solo los primeros 4 campos (ubigeo, departamento, provincia, distrito)
                             if len(fields) >= 4:
                                 lines.append(fields[:4])
 
-                    # Create DataFrame
+                    # Crear DataFrame
                     if len(lines) > 1:
                         self.df_ubigeos = pd.DataFrame(
-                            lines[1:],  # Skip header
+                            lines[1:],  # Omitir el encabezado
                             columns=['ubigeo_reniec', 'departamento', 'provincia', 'distrito']
                         )
                         print(f"✅ Loaded ubigeos with encoding: {encoding}")
@@ -59,16 +59,16 @@ class UbigeoService:
             if self.df_ubigeos is None:
                 raise Exception("Could not read file with any encoding")
 
-            # Clean data (remove extra spaces and convert to uppercase)
+            # Limpiar datos (eliminar espacios extra y convertir a mayúsculas)
             self.df_ubigeos['ubigeo_reniec'] = self.df_ubigeos['ubigeo_reniec'].str.strip()
             self.df_ubigeos['departamento'] = self.df_ubigeos['departamento'].str.strip().str.upper()
             self.df_ubigeos['provincia'] = self.df_ubigeos['provincia'].str.strip().str.upper()
             self.df_ubigeos['distrito'] = self.df_ubigeos['distrito'].str.strip().str.upper()
 
-            # Filter out rows with empty ubigeo
+            # Filtrar filas con ubigeo vacío
             self.df_ubigeos = self.df_ubigeos[self.df_ubigeos['ubigeo_reniec'] != '']
 
-            # Convert ubigeo to integer
+            # Convertir ubigeo a entero
             self.df_ubigeos['ubigeo_reniec'] = self.df_ubigeos['ubigeo_reniec'].astype(int)
 
             print(f"✅ Ubigeos loaded: {len(self.df_ubigeos)} records")
@@ -117,7 +117,7 @@ class UbigeoService:
         departamento = departamento.strip().upper()
         provincia = provincia.strip().upper()
 
-        # Filter by department and province
+        # Filtrar por departamento y provincia
         matches = self.df_ubigeos[
             (self.df_ubigeos['departamento'] == departamento) &
             (self.df_ubigeos['provincia'] == provincia)
@@ -126,19 +126,19 @@ class UbigeoService:
         if len(matches) == 0:
             return None
 
-        # Return the first ubigeo (usually the capital district)
-        # The ubigeo format is DDPPDD where:
-        # - DD = department code
-        # - PP = province code
-        # - DD = district code
-        # We want the one ending in '01' (capital district) if available
+        # Devolver el primer ubigeo (usualmente el distrito capital)
+        # El formato de ubigeo es DDPPDD donde:
+        # - DD = código de departamento
+        # - PP = código de provincia
+        # - DD = código de distrito
+        # Buscamos el que termina en '01' (capital) si está disponible
 
-        # Try to find the capital district (ends with 01)
+        # Intentar encontrar el distrito capital (termina en 01)
         capital = matches[matches['ubigeo_reniec'] % 100 == 1]
         if len(capital) > 0:
             return int(capital.iloc[0]['ubigeo_reniec'])
 
-        # Otherwise return the first one
+        # En caso contrario, devolver el primero
         return int(matches.iloc[0]['ubigeo_reniec'])
 
     def get_all_departamentos(self) -> List[str]:
@@ -196,7 +196,7 @@ class UbigeoService:
         }
 
 
-# Singleton instance
+# Instancia singleton
 _ubigeo_service = None
 
 
@@ -217,7 +217,7 @@ def get_ubigeo_service(ubigeo_file_path: str = None) -> UbigeoService:
 
     if _ubigeo_service is None:
         if ubigeo_file_path is None:
-            # Default path
+            # Ruta por defecto
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             ubigeo_file_path = os.path.join(base_dir, 'data', 'TB_UBIGEOS.csv')
 

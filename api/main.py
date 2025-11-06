@@ -45,7 +45,7 @@ xai_service = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Load model and ubigeo service on startup"""
+    """Cargar modelo y servicio de ubigeo al iniciar"""
     global predictor, ubigeo_service, xai_service
     try:
         predictor = Predictor(MODEL_PATH)
@@ -75,7 +75,7 @@ async def startup_event():
 
 # Request models
 class PredictionInput(BaseModel):
-    """Input data for prediction"""
+    """Datos de entrada para predicción"""
     NroMes: int = Field(..., ge=1, le=12, description="Mes del año (1-12)")
     Departamento: str = Field(..., description="Departamento del Perú")
     Provincia: str = Field(..., description="Provincia del Perú")
@@ -132,33 +132,33 @@ class PredictionInput(BaseModel):
 
 
 class PredictionOutput(BaseModel):
-    """Output data for prediction"""
+    """Datos de salida de la predicción"""
     tasa_positividad_predicha: float = Field(..., description="Tasa de positividad predicha (%)")
     interpretacion: str = Field(..., description="Interpretación del nivel de riesgo")
     input_data: dict = Field(..., description="Datos de entrada utilizados")
 
 
 class BatchPredictionInput(BaseModel):
-    """Input for batch predictions"""
+    """Entrada para predicciones por lote"""
     predictions: List[PredictionInput]
 
 
 class ModelInfoOutput(BaseModel):
-    """Model information output"""
+    """Salida de información del modelo"""
     model_type: str
     n_features: int
     metrics: dict
 
 
 class XAIExplanationOutput(BaseModel):
-    """Output for XAI explanation"""
+    """Salida para explicación XAI"""
     contexto_situacional: str = Field(..., description="Explicación contextual del riesgo")
     acciones: List[str] = Field(..., description="Lista de acciones preventivas recomendadas")
     factores_clave: List[str] = Field(..., description="Factores clave que influyen en la predicción")
 
 
 class PredictionWithXAIOutput(BaseModel):
-    """Output for prediction with XAI explanation"""
+    """Salida de predicción con explicación XAI"""
     tasa_positividad_predicha: float = Field(..., description="Tasa de positividad predicha (%)")
     interpretacion: str = Field(..., description="Interpretación del nivel de riesgo")
     input_data: dict = Field(..., description="Datos de entrada utilizados")
@@ -169,7 +169,7 @@ class PredictionWithXAIOutput(BaseModel):
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Endpoint raíz"""
     return {
         "message": "Mental Health Screening Prediction API",
         "version": "1.0.0",
@@ -186,7 +186,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Endpoint de verificación de salud"""
     model_loaded = predictor is not None
     return {
         "status": "healthy" if model_loaded else "degraded",

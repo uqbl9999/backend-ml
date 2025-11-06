@@ -1,4 +1,4 @@
-"""Services module"""
+"""Módulo de servicios"""
 
 from .ubigeo_service import UbigeoService, get_ubigeo_service
 
