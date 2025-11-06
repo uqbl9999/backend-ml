@@ -30,9 +30,9 @@ class DataPreparation:
 
     def load_data(self) -> pd.DataFrame:
         """Cargar datos crudos desde archivo CSV"""
-        print("Loading data...")
+        print("Cargando datos...")
         self.df = pd.read_csv(self.data_path, sep=';', encoding='latin1')
-        print(f"✅ Dataset loaded: {self.df.shape[0]:,} rows x {self.df.shape[1]} columns")
+        print(f"✅ Dataset cargado: {self.df.shape[0]:,} filas x {self.df.shape[1]} columnas")
         return self.df
 
     def calculate_positivity_rate(self) -> pd.DataFrame:
@@ -40,7 +40,7 @@ class DataPreparation:
         Calculate the positivity rate (Tasa_Positividad) by merging
         total screenings and positive cases
         """
-        print("\nCalculating positivity rate...")
+        print("\nCalculando tasa de positividad...")
 
         # Convertir 'Casos' a numérico si es necesario
         if self.df['Casos'].dtype == 'object':
@@ -52,8 +52,8 @@ class DataPreparation:
         df_total = self.df[self.df['GrupoTamizaje'].str.contains('TOTAL', case=False, na=False)].copy()
         df_positivos = self.df[self.df['GrupoTamizaje'].str.contains('POSITIVOS', case=False, na=False)].copy()
 
-        print(f"  Total records: {len(df_total):,}")
-        print(f"  Positive records: {len(df_positivos):,}")
+        print(f"  Registros totales: {len(df_total):,}")
+        print(f"  Registros positivos: {len(df_positivos):,}")
 
         # Renombrar columnas
         df_total = df_total.rename(columns={'Casos': 'Total'})
@@ -84,8 +84,8 @@ class DataPreparation:
         # Eliminar filas donde Total = 0
         self.df_pivot = self.df_pivot[self.df_pivot['Total'] > 0].copy()
 
-        print(f"✅ Positivity rate calculated: {self.df_pivot.shape[0]:,} rows")
-        print(f"✅ Average rate: {self.df_pivot['Tasa_Positividad'].mean():.2f}%")
+        print(f"✅ Tasa de positividad calculada: {self.df_pivot.shape[0]:,} filas")
+        print(f"✅ Tasa promedio: {self.df_pivot['Tasa_Positividad'].mean():.2f}%")
 
         return self.df_pivot
 
@@ -93,7 +93,7 @@ class DataPreparation:
         """
         Eliminar valores imposibles (Tasa_Positividad > 100%)
         """
-        print("\nCleaning data...")
+        print("\nLimpiando datos...")
 
         before_count = len(self.df_pivot)
         before_avg = self.df_pivot['Tasa_Positividad'].mean()
@@ -104,9 +104,9 @@ class DataPreparation:
         removed_count = before_count - len(self.df_clean)
         after_avg = self.df_clean['Tasa_Positividad'].mean()
 
-        print(f"  Removed {removed_count:,} records with rate > 100%")
-        print(f"  Before: {before_count:,} rows, avg rate: {before_avg:.2f}%")
-        print(f"  After: {len(self.df_clean):,} rows, avg rate: {after_avg:.2f}%")
+        print(f"  Eliminados {removed_count:,} registros con tasa > 100%")
+        print(f"  Antes: {before_count:,} filas, tasa prom.: {before_avg:.2f}%")
+        print(f"  Después: {len(self.df_clean):,} filas, tasa prom.: {after_avg:.2f}%")
 
         return self.df_clean
 
@@ -115,7 +115,7 @@ class DataPreparation:
         Aplicar one-hot encoding a variables categóricas
         y eliminar columnas innecesarias
         """
-        print("\nApplying feature engineering...")
+        print("\nAplicando ingeniería de características...")
 
         # One-hot encoding
         multi_cat_cols = ["Departamento", "Sexo", "DetalleTamizaje", "Etapa"]
@@ -124,7 +124,7 @@ class DataPreparation:
         # Eliminar columnas innecesarias
         self.df_encoded = self.df_encoded.drop(columns=['Provincia', 'Distrito'])
 
-        print(f"✅ Features encoded: {self.df_encoded.shape}")
+        print(f"✅ Características codificadas: {self.df_encoded.shape}")
 
         return self.df_encoded
 
@@ -144,7 +144,7 @@ class DataPreparation:
         --------
         tuple : (X_balanced, y_balanced)
         """
-        print("\nBalancing data...")
+        print("\nBalanceando datos...")
 
         y = self.df_encoded['Tasa_Positividad']
         X = self.df_encoded.drop(columns=['Tasa_Positividad', 'Total', 'Positivos'])
@@ -157,7 +157,7 @@ class DataPreparation:
         X_non_zero = X[non_zero_mask]
         y_non_zero = y[non_zero_mask]
 
-        print(f"  Original - Zeros: {len(y_zero):,} | Positives: {len(y_non_zero):,}")
+        print(f"  Original - Ceros: {len(y_zero):,} | Positivos: {len(y_non_zero):,}")
 
         # PASO 1: Submuestrear ceros
         n_zeros_keep = int(len(y_non_zero) / (1 - zero_ratio) * zero_ratio)
@@ -169,14 +169,14 @@ class DataPreparation:
             X_zero_sampled = X_zero
             y_zero_sampled = y_zero
 
-        print(f"  Undersampled - Zeros kept: {len(y_zero_sampled):,}")
+        print(f"  Submuestreados - Ceros conservados: {len(y_zero_sampled):,}")
 
         # PASO 2: Sobremuestrear positivos (tipo SMOTE)
         n_synthetic = int(len(X_non_zero) * (oversample_factor - 1))
         k = min(5, len(X_non_zero) - 1)
 
         if k < 1:
-            print("⚠️  Not enough positives for oversampling")
+            print("⚠️  No hay suficientes positivos para sobremuestreo")
             X_res = pd.concat([X_zero_sampled, X_non_zero], ignore_index=True)
             y_res = pd.concat([y_zero_sampled, y_non_zero], ignore_index=True)
             return X_res, y_res
@@ -213,8 +213,8 @@ class DataPreparation:
         X_res = pd.concat([X_zero_sampled, X_non_zero, synthetic_X_df], ignore_index=True)
         y_res = pd.concat([y_zero_sampled, y_non_zero, synthetic_y_series], ignore_index=True)
 
-        print(f"  Balanced - Zeros: {(y_res == 0).sum():,} | Positives: {(y_res > 0).sum():,}")
-        print(f"  Zero proportion: {(y_res == 0).sum() / len(y_res):.2%}")
+        print(f"  Balanceado - Ceros: {(y_res == 0).sum():,} | Positivos: {(y_res > 0).sum():,}")
+        print(f"  Proporción de ceros: {(y_res == 0).sum() / len(y_res):.2%}")
 
         return X_res, y_res
 
@@ -241,13 +241,13 @@ class DataPreparation:
         self.clean_data()
         if save_intermediate:
             self.df_clean.to_csv('data/dataset_limpio.csv', index=False, encoding='utf-8-sig')
-            print(f"💾 Saved: data/dataset_limpio.csv")
+            print(f"💾 Guardado: data/dataset_limpio.csv")
 
         # Ingeniería de características
         self.feature_engineering()
         if save_intermediate:
             self.df_encoded.to_csv('data/df_clean_to_model.csv', index=False, encoding='utf-8-sig')
-            print(f"💾 Saved: data/df_clean_to_model.csv")
+            print(f"💾 Guardado: data/df_clean_to_model.csv")
 
         # Balance data
         X_balanced, y_balanced = self.balance_data(zero_ratio=0.3, oversample_factor=2)
@@ -256,8 +256,8 @@ class DataPreparation:
             df_balanced = X_balanced.copy()
             df_balanced['Tasa_Positividad'] = y_balanced.values
             df_balanced.to_csv('data/dataset_balanceado.csv', index=False, encoding='utf-8-sig')
-            print(f"💾 Saved: data/dataset_balanceado.csv")
+            print(f"💾 Guardado: data/dataset_balanceado.csv")
 
-        print("\n✅ Data preparation pipeline completed!")
+        print("\n✅ ¡Pipeline de preparación de datos completado!")
 
         return X_balanced, y_balanced

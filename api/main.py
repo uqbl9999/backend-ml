@@ -49,28 +49,28 @@ async def startup_event():
     global predictor, ubigeo_service, xai_service
     try:
         predictor = Predictor(MODEL_PATH)
-        print("✅ Model loaded successfully")
+        print("✅ Modelo cargado correctamente")
     except Exception as e:
-        print(f"⚠️  Warning: Could not load model: {e}")
-        print("    API will start but predictions will not be available")
+        print(f"⚠️  Advertencia: No se pudo cargar el modelo: {e}")
+        print("    La API iniciará pero las predicciones no estarán disponibles")
 
     try:
         ubigeo_service = get_ubigeo_service()
-        print("✅ Ubigeo service loaded successfully")
+        print("✅ Servicio de ubigeo cargado correctamente")
     except Exception as e:
-        print(f"⚠️  Warning: Could not load ubigeo service: {e}")
-        print("    Location mapping will not be available")
+        print(f"⚠️  Advertencia: No se pudo cargar el servicio de ubigeo: {e}")
+        print("    El mapeo de ubicación no estará disponible")
 
     try:
         xai_service = get_xai_service()
         if xai_service:
-            print("✅ XAI service loaded successfully")
+            print("✅ Servicio XAI cargado correctamente")
         else:
-            print("⚠️  Warning: XAI service not available (PERPLEXITY_API_KEY not set)")
-            print("    Explainable AI features will not be available")
+            print("⚠️  Advertencia: Servicio XAI no disponible (PERPLEXITY_API_KEY no configurada)")
+            print("    Las funciones de IA explicable no estarán disponibles")
     except Exception as e:
-        print(f"⚠️  Warning: Could not load XAI service: {e}")
-        print("    Explainable AI features will not be available")
+        print(f"⚠️  Advertencia: No se pudo cargar el servicio XAI: {e}")
+        print("    Las funciones de IA explicable no estarán disponibles")
 
 
 # Request models
@@ -203,10 +203,10 @@ async def predict(input_data: PredictionInput):
     basándose en características demográficas, geográficas y temporales.
     """
     if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
 
     if ubigeo_service is None:
-        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+        raise HTTPException(status_code=503, detail="Servicio de ubigeo no cargado")
 
     try:
         # Convert Pydantic model to dict
@@ -247,7 +247,7 @@ async def predict(input_data: PredictionInput):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error de predicción: {str(e)}")
 
 
 @app.post("/predict/batch")
@@ -258,7 +258,7 @@ async def predict_batch(batch_input: BatchPredictionInput):
     Permite predecir múltiples casos de manera eficiente.
     """
     if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
 
     try:
         # Convert Pydantic models to dicts
@@ -273,7 +273,7 @@ async def predict_batch(batch_input: BatchPredictionInput):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error en predicción por lote: {str(e)}")
 
 
 @app.post("/predict/explain", response_model=PredictionWithXAIOutput)
@@ -287,10 +287,10 @@ async def predict_with_explanation(input_data: PredictionInput):
     Requiere configurar PERPLEXITY_API_KEY en las variables de entorno.
     """
     if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
 
     if ubigeo_service is None:
-        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+        raise HTTPException(status_code=503, detail="Servicio de ubigeo no cargado")
 
     try:
         # Convert Pydantic model to dict
@@ -338,14 +338,14 @@ async def predict_with_explanation(input_data: PredictionInput):
                 result['explicacion'] = xai_result['explanation']
             else:
                 # Log the error for debugging
-                print(f"⚠️  XAI Error: {xai_result.get('error', 'Unknown error')}")
+                print(f"⚠️  Error de XAI: {xai_result.get('error', 'Error desconocido')}")
                 # Use fallback explanation if XAI fails
                 result['explicacion'] = xai_result['explanation']
         else:
-            # XAI service not available
+            # Servicio XAI no disponible
             raise HTTPException(
                 status_code=503,
-                detail="XAI service not available. Configure PERPLEXITY_API_KEY environment variable."
+                detail="Servicio XAI no disponible. Configure la variable de entorno PERPLEXITY_API_KEY."
             )
 
         return result
@@ -353,7 +353,7 @@ async def predict_with_explanation(input_data: PredictionInput):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error de predicción: {str(e)}")
 
 
 @app.get("/model/info", response_model=ModelInfoOutput)
@@ -364,14 +364,14 @@ async def get_model_info():
     Retorna información sobre el tipo de modelo, número de features y métricas de evaluación.
     """
     if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
 
     try:
         info = predictor.get_model_info()
         return info
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting model info: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener info del modelo: {str(e)}")
 
 
 @app.get("/model/features")
@@ -383,11 +383,11 @@ async def get_feature_importance(top_n: int = 10):
     - top_n: Número de características a retornar (default: 10)
     """
     if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(status_code=503, detail="Modelo no cargado")
 
     try:
         if top_n < 1 or top_n > 50:
-            raise HTTPException(status_code=400, detail="top_n must be between 1 and 50")
+            raise HTTPException(status_code=400, detail="top_n debe estar entre 1 y 50")
 
         features = predictor.get_feature_importance(top_n=top_n)
 
@@ -399,7 +399,7 @@ async def get_feature_importance(top_n: int = 10):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting feature importance: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener importancia de características: {str(e)}")
 
 
 @app.get("/metadata/departamentos")
@@ -450,7 +450,7 @@ async def get_provincias(departamento: str):
     - departamento: Nombre del departamento
     """
     if ubigeo_service is None:
-        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+        raise HTTPException(status_code=503, detail="Servicio de ubigeo no cargado")
 
     try:
         provincias = ubigeo_service.get_provincias_by_departamento(departamento)
@@ -469,7 +469,7 @@ async def get_provincias(departamento: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting provinces: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener provincias: {str(e)}")
 
 
 @app.get("/metadata/ubigeo/{departamento}/{provincia}")
@@ -482,7 +482,7 @@ async def get_ubigeo(departamento: str, provincia: str):
     - provincia: Nombre de la provincia
     """
     if ubigeo_service is None:
-        raise HTTPException(status_code=503, detail="Ubigeo service not loaded")
+        raise HTTPException(status_code=503, detail="Servicio de ubigeo no cargado")
 
     try:
         ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
@@ -503,7 +503,7 @@ async def get_ubigeo(departamento: str, provincia: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error getting ubigeo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener ubigeo: {str(e)}")
 
 
 if __name__ == "__main__":

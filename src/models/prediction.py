@@ -38,9 +38,9 @@ class Predictor:
         self.model_type = model_data.get('model_type', 'unknown')
         self.metrics = model_data.get('metrics', {})
 
-        print(f"✅ Model loaded: {self.model_path}")
-        print(f"  Model type: {self.model_type}")
-        print(f"  Features required: {len(self.feature_names)}")
+        print(f"✅ Modelo cargado: {self.model_path}")
+        print(f"  Tipo de modelo: {self.model_type}")
+        print(f"  Características requeridas: {len(self.feature_names)}")
 
     def _prepare_features(self, input_data: Dict) -> pd.DataFrame:
         """
@@ -53,7 +53,7 @@ class Predictor:
 
         Returns:
         --------
-        pd.DataFrame : Prepared features
+        pd.DataFrame : Características preparadas
         """
         # Crear un DataFrame con todas las features inicializadas en 0
         feature_dict = {feature: 0 for feature in self.feature_names}
@@ -100,7 +100,7 @@ class Predictor:
 
         Returns:
         --------
-        dict : Prediction result with confidence information
+        dict : Resultado de predicción con información de confianza
         """
         # Prepare features
         X = self._prepare_features(input_data)
@@ -130,7 +130,7 @@ class Predictor:
 
         Returns:
         --------
-        list of dict : Prediction results
+        list of dict : Resultados de predicción
         """
         results = []
 
@@ -152,7 +152,7 @@ class Predictor:
 
         Returns:
         --------
-        str : Interpretation
+        str : Interpretación
         """
         if prediction < 2:
             return "Riesgo Muy Bajo - Bajo requerimiento de recursos"
@@ -176,7 +176,7 @@ class Predictor:
 
         Returns:
         --------
-        list of dict : Feature importance information
+        list of dict : Información de importancia de características
         """
         importances = self.model.feature_importances_
 
@@ -196,7 +196,7 @@ class Predictor:
 
         Returns:
         --------
-        dict : Model information
+        dict : Información del modelo
         """
         info = {
             'model_type': self.model_type,
@@ -217,7 +217,7 @@ class Predictor:
 
         Returns:
         --------
-        dict : Validation result
+        dict : Resultado de validación
         """
         errors = []
 
@@ -226,17 +226,17 @@ class Predictor:
 
         for field in required_fields:
             if field not in input_data:
-                errors.append(f"Missing required field: {field}")
+                errors.append(f"Falta el campo requerido: {field}")
 
         # Validar NroMes (1-12)
         if 'NroMes' in input_data:
             if not isinstance(input_data['NroMes'], int) or input_data['NroMes'] < 1 or input_data['NroMes'] > 12:
-                errors.append("NroMes must be an integer between 1 and 12")
+                errors.append("NroMes debe ser un entero entre 1 y 12")
 
         # Validar ubigeo si está presente
         if 'ubigeo' in input_data:
             if not isinstance(input_data['ubigeo'], int):
-                errors.append("ubigeo must be an integer")
+                errors.append("ubigeo debe ser un entero")
 
         return {
             'is_valid': len(errors) == 0,

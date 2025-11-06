@@ -51,13 +51,13 @@ class UbigeoService:
                             lines[1:],  # Omitir el encabezado
                             columns=['ubigeo_reniec', 'departamento', 'provincia', 'distrito']
                         )
-                        print(f"✅ Loaded ubigeos with encoding: {encoding}")
+                        print(f"✅ Ubigeos cargados con codificación: {encoding}")
                         break
                 except (UnicodeDecodeError, Exception) as e:
                     continue
 
             if self.df_ubigeos is None:
-                raise Exception("Could not read file with any encoding")
+                raise Exception("No se pudo leer el archivo con ninguna codificación")
 
             # Limpiar datos (eliminar espacios extra y convertir a mayúsculas)
             self.df_ubigeos['ubigeo_reniec'] = self.df_ubigeos['ubigeo_reniec'].str.strip()
@@ -71,10 +71,10 @@ class UbigeoService:
             # Convertir ubigeo a entero
             self.df_ubigeos['ubigeo_reniec'] = self.df_ubigeos['ubigeo_reniec'].astype(int)
 
-            print(f"✅ Ubigeos loaded: {len(self.df_ubigeos)} records")
+            print(f"✅ Ubigeos cargados: {len(self.df_ubigeos)} registros")
 
         except Exception as e:
-            print(f"❌ Error loading ubigeos: {e}")
+            print(f"❌ Error cargando ubigeos: {e}")
             raise
 
     def get_provincias_by_departamento(self, departamento: str) -> List[str]:

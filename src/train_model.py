@@ -28,27 +28,27 @@ def main(data_path: str, model_type: str = 'random_forest', optimize: bool = Tru
         Si se debe realizar optimización de hiperparámetros
     """
     print("="*80)
-    print("MENTAL HEALTH SCREENING PREDICTION - MODEL TRAINING")
+    print("PREDICCIÓN DE TAMIZAJE DE SALUD MENTAL - ENTRENAMIENTO DEL MODELO")
     print("="*80)
 
     # =========================================================================
     # FASE 1: PREPARACIÓN DE DATOS
     # =========================================================================
     print("\n" + "="*80)
-    print("PHASE 1: DATA PREPARATION")
+    print("FASE 1: PREPARACIÓN DE DATOS")
     print("="*80)
 
     data_prep = DataPreparation(data_path)
     X_balanced, y_balanced = data_prep.prepare_full_pipeline(save_intermediate=True)
 
-    print(f"\n✅ Data preparation completed!")
-    print(f"   Final dataset: {X_balanced.shape[0]:,} rows x {X_balanced.shape[1]} columns")
+    print(f"\n✅ ¡Preparación de datos completada!")
+    print(f"   Dataset final: {X_balanced.shape[0]:,} filas x {X_balanced.shape[1]} columnas")
 
     # =========================================================================
     # FASE 2: ENTRENAMIENTO DEL MODELO
     # =========================================================================
     print("\n" + "="*80)
-    print("PHASE 2: MODEL TRAINING")
+    print("FASE 2: ENTRENAMIENTO DEL MODELO")
     print("="*80)
 
     trainer = ModelTrainer(model_type=model_type)
@@ -67,7 +67,7 @@ def main(data_path: str, model_type: str = 'random_forest', optimize: bool = Tru
     # FASE 3: GUARDAR MODELO
     # =========================================================================
     print("\n" + "="*80)
-    print("PHASE 3: SAVE MODEL")
+    print("FASE 3: GUARDAR MODELO")
     print("="*80)
 
     # Crear el directorio 'models' si no existe
@@ -81,7 +81,7 @@ def main(data_path: str, model_type: str = 'random_forest', optimize: bool = Tru
     # FASE 4: GENERAR GRÁFICOS DE EVALUACIÓN
     # =========================================================================
     print("\n" + "="*80)
-    print("PHASE 4: GENERATE EVALUATION PLOTS")
+    print("FASE 4: GENERAR GRÁFICOS DE EVALUACIÓN")
     print("="*80)
 
     # Crear el directorio 'docs' si no existe
@@ -94,39 +94,39 @@ def main(data_path: str, model_type: str = 'random_forest', optimize: bool = Tru
     # RESUMEN
     # =========================================================================
     print("\n" + "="*80)
-    print("TRAINING COMPLETED!")
+    print("¡ENTRENAMIENTO COMPLETADO!")
     print("="*80)
-    print("\n📊 Summary:")
-    print(f"   Model type: {model_type}")
-    print(f"   Training samples: {trainer.X_train.shape[0]:,}")
-    print(f"   Test samples: {trainer.X_test.shape[0]:,}")
-    print(f"   Features: {len(trainer.feature_names)}")
+    print("\n📊 Resumen:")
+    print(f"   Tipo de modelo: {model_type}")
+    print(f"   Muestras de entrenamiento: {trainer.X_train.shape[0]:,}")
+    print(f"   Muestras de prueba: {trainer.X_test.shape[0]:,}")
+    print(f"   Características: {len(trainer.feature_names)}")
 
     if 'optimized_test' in trainer.metrics:
         test_metrics = trainer.metrics['optimized_test']
-        print(f"\n📈 Test Set Performance:")
-        print(f"   R² Score: {test_metrics['R2']:.4f}")
+        print(f"\n📈 Rendimiento en Conjunto de Prueba:")
+        print(f"   Puntaje R²: {test_metrics['R2']:.4f}")
         print(f"   MAE: {test_metrics['MAE']:.4f}%")
         print(f"   RMSE: {test_metrics['RMSE']:.4f}%")
 
-    print(f"\n💾 Files saved:")
-    print(f"   Model: {model_filename}")
-    print(f"   Plots: docs/evaluation_*.png")
-    print(f"   Data: data/dataset_*.csv")
+    print(f"\n💾 Archivos guardados:")
+    print(f"   Modelo: {model_filename}")
+    print(f"   Gráficos: docs/evaluation_*.png")
+    print(f"   Datos: data/dataset_*.csv")
 
-    print("\n✅ Ready to use! Start the API with: uvicorn api.main:app --reload")
+    print("\n✅ ¡Listo para usar! Inicia la API con: uvicorn api.main:app --reload")
     print("="*80)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Train mental health screening prediction model')
+    parser = argparse.ArgumentParser(description='Entrenar modelo de predicción de tamizaje de salud mental')
     parser.add_argument('--data', type=str, default='tamizajes.csv',
-                       help='Path to raw data CSV file')
+                       help='Ruta al archivo CSV de datos crudos')
     parser.add_argument('--model', type=str, default='random_forest',
                        choices=['gradient_boosting', 'random_forest'],
-                       help='Type of model to train')
+                       help='Tipo de modelo a entrenar')
     parser.add_argument('--no-optimize', action='store_true',
-                       help='Skip hyperparameter optimization (faster training)')
+                       help='Omitir optimización de hiperparámetros (entrenamiento más rápido)')
 
     args = parser.parse_args()
 

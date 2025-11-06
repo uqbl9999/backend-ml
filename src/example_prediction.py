@@ -21,30 +21,30 @@ def main():
     Ejemplo de cómo usar la clase Predictor
     """
     print("="*80)
-    print("EXAMPLE PREDICTIONS")
+    print("EJEMPLOS DE PREDICCIONES")
     print("="*80)
 
     # Cargar el modelo entrenado
     model_path = 'models/trained_model.pkl'
 
     if not os.path.exists(model_path):
-        print(f"\n❌ Error: Model not found at {model_path}")
-        print("   Please train a model first by running:")
+        print(f"\n❌ Error: Modelo no encontrado en {model_path}")
+        print("   Por favor, entrena un modelo primero ejecutando:")
         print("   python src/train_model.py")
         return
 
-    print(f"\nLoading model from: {model_path}")
+    print(f"\nCargando modelo desde: {model_path}")
     predictor = Predictor(model_path)
 
     # Cargar servicio de ubigeo
-    print("Loading ubigeo service...")
+    print("Cargando servicio de ubigeo...")
     ubigeo_service = get_ubigeo_service()
 
     # =========================================================================
     # EJEMPLO 1: Predicción única con mapeo automático de Ubigeo
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 1: Single Prediction with Automatic Ubigeo Mapping")
+    print("EJEMPLO 1: Predicción única con mapeo automático de Ubigeo")
     print("="*80)
 
     # Obtener ubigeo desde departamento y provincia
@@ -52,7 +52,7 @@ def main():
     provincia = 'LIMA'
     ubigeo = ubigeo_service.get_ubigeo_by_dept_prov(departamento, provincia)
 
-    print(f"\n🗺️  Location Mapping:")
+    print(f"\n🗺️  Mapeo de ubicación:")
     print(f"   Departamento: {departamento}")
     print(f"   Provincia: {provincia}")
     print(f"   → Ubigeo: {ubigeo}")
@@ -66,13 +66,13 @@ def main():
         'DetalleTamizaje': 'VIOLENCIA FAMILIAR/MALTRATO INFANTIL'
     }
 
-    print("\n📝 Input:")
+    print("\n📝 Entrada:")
     for key, value in example_1.items():
         print(f"   {key}: {value}")
 
     result_1 = predictor.predict_single(example_1)
 
-    print("\n📊 Prediction:")
+    print("\n📊 Predicción:")
     print(f"   Tasa de Positividad: {result_1['tasa_positividad_predicha']:.2f}%")
     print(f"   Interpretación: {result_1['interpretacion']}")
 
@@ -80,7 +80,7 @@ def main():
     # EJEMPLO 2: Predicciones múltiples
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 2: Batch Predictions")
+    print("EJEMPLO 2: Predicciones por lote")
     print("="*80)
 
     # Preparar lote con mapeo de ubigeo
@@ -119,12 +119,12 @@ def main():
 
     results_batch = predictor.predict_batch(examples_batch)
 
-    print(f"\n📊 {len(results_batch)} Predictions:")
+    print(f"\n📊 {len(results_batch)} Predicciones:")
     print("-"*80)
 
     for i, result in enumerate(results_batch, 1):
         input_data = result['input_data']
-        print(f"\nPrediction {i}:")
+        print(f"\nPredicción {i}:")
         print(f"   {input_data['Departamento']} - {input_data['DetalleTamizaje'][:40]}")
         print(f"   Mes: {input_data['NroMes']}, Sexo: {input_data['Sexo']}, Edad: {input_data['Etapa']}")
         print(f"   → Tasa: {result['tasa_positividad_predicha']:.2f}%")
@@ -134,12 +134,12 @@ def main():
     # EJEMPLO 3: Importancia de características
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 3: Most Important Features")
+    print("EJEMPLO 3: Características más importantes")
     print("="*80)
 
     top_features = predictor.get_feature_importance(top_n=10)
 
-    print("\n📈 Top 10 Most Important Features:")
+    print("\n📈 Top 10 Características Más Importantes:")
     print("-"*80)
 
     for i, feature_info in enumerate(top_features, 1):
@@ -151,18 +151,18 @@ def main():
     # EJEMPLO 4: Información del modelo
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 4: Model Information")
+    print("EJEMPLO 4: Información del Modelo")
     print("="*80)
 
     model_info = predictor.get_model_info()
 
-    print(f"\n📊 Model Type: {model_info['model_type']}")
-    print(f"📊 Number of Features: {model_info['n_features']}")
+    print(f"\n📊 Tipo de Modelo: {model_info['model_type']}")
+    print(f"📊 Número de Características: {model_info['n_features']}")
 
     if 'optimized_test' in model_info['metrics']:
         test_metrics = model_info['metrics']['optimized_test']
-        print(f"\n📈 Test Set Performance:")
-        print(f"   R² Score: {test_metrics['R2']:.4f}")
+        print(f"\n📈 Rendimiento en Conjunto de Prueba:")
+        print(f"   Puntaje R²: {test_metrics['R2']:.4f}")
         print(f"   MAE: {test_metrics['MAE']:.4f}%")
         print(f"   RMSE: {test_metrics['RMSE']:.4f}%")
 
@@ -170,12 +170,12 @@ def main():
     # EJEMPLO 5: Comparando diferentes escenarios
     # =========================================================================
     print("\n" + "="*80)
-    print("EXAMPLE 5: Comparing Different Age Groups")
+    print("EJEMPLO 5: Comparando diferentes grupos de edad")
     print("="*80)
 
     age_groups = ['18 - 24', '30 - 39', '40 - 59', '60 - 79']
 
-    print("\nComparing depression screening by age group in Lima (Female):")
+    print("\nComparando tamizaje de depresión por grupo etario en Lima (Femenino):")
     print("-"*80)
 
     lima_ubigeo = ubigeo_service.get_ubigeo_by_dept_prov('LIMA', 'LIMA')
@@ -191,10 +191,10 @@ def main():
         }
 
         result = predictor.predict_single(test_input)
-        print(f"   Age {age:12} → Tasa: {result['tasa_positividad_predicha']:5.2f}%")
+        print(f"   Edad {age:12} → Tasa: {result['tasa_positividad_predicha']:5.2f}%")
 
     print("\n" + "="*80)
-    print("✅ Examples completed!")
+    print("✅ ¡Ejemplos completados!")
     print("="*80)
 
 

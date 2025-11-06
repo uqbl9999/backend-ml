@@ -52,7 +52,7 @@ class ModelTrainer:
         random_state : int
             Semilla aleatoria
         """
-        print("\nSplitting data...")
+        print("\nDividiendo datos...")
 
         # Eliminar 'Anio' si está presente (valor constante, sin poder predictivo)
         if 'Anio' in X.columns:
@@ -64,13 +64,13 @@ class ModelTrainer:
 
         self.feature_names = X.columns.tolist()
 
-        print(f"✅ Training set: {self.X_train.shape[0]:,} rows")
-        print(f"✅ Test set: {self.X_test.shape[0]:,} rows")
-        print(f"✅ Features: {len(self.feature_names)}")
+        print(f"✅ Conjunto de entrenamiento: {self.X_train.shape[0]:,} filas")
+        print(f"✅ Conjunto de prueba: {self.X_test.shape[0]:,} filas")
+        print(f"✅ Características: {len(self.feature_names)}")
 
     def train_base_model(self):
         """Entrenar un modelo base sin optimización de hiperparámetros"""
-        print(f"\nTraining base {self.model_type} model...")
+        print(f"\nEntrenando modelo base {self.model_type}...")
 
         if self.model_type == 'random_forest':
             self.model = RandomForestRegressor(
@@ -89,10 +89,10 @@ class ModelTrainer:
                 verbose=0
             )
         else:
-            raise ValueError(f"Unknown model type: {self.model_type}")
+            raise ValueError(f"Tipo de modelo desconocido: {self.model_type}")
 
         self.model.fit(self.X_train, self.y_train)
-        print("✅ Base model training completed")
+        print("✅ Entrenamiento del modelo base completado")
 
         # Evaluate base model
         self._evaluate_model(prefix="base")
@@ -108,9 +108,9 @@ class ModelTrainer:
         cv : int
             Número de particiones para validación cruzada
         """
-        print(f"\nOptimizing hyperparameters for {self.model_type}...")
+        print(f"\nOptimizando hiperparámetros para {self.model_type}...")
         print(f"  n_iter={n_iter}, cv={cv}")
-        print("  This may take several minutes...")
+        print("  Esto puede tomar varios minutos...")
 
         if self.model_type == 'random_forest':
             param_distributions = {
@@ -137,7 +137,7 @@ class ModelTrainer:
             base_estimator = GradientBoostingRegressor(random_state=42)
 
         else:
-            raise ValueError(f"Unknown model type: {self.model_type}")
+            raise ValueError(f"Tipo de modelo desconocido: {self.model_type}")
 
         # Búsqueda aleatoria
         random_search = RandomizedSearchCV(
@@ -153,18 +153,18 @@ class ModelTrainer:
 
         random_search.fit(self.X_train, self.y_train)
 
-        print("\n✅ Optimization completed!")
-        print("\n📊 Best hyperparameters:")
+        print("\n✅ ¡Optimización completada!")
+        print("\n📊 Mejores hiperparámetros:")
         for param, value in random_search.best_params_.items():
             print(f"  • {param}: {value}")
 
-        print(f"\n✅ Best CV R² score: {random_search.best_score_:.4f}")
+        print(f"\n✅ Mejor puntaje R² en CV: {random_search.best_score_:.4f}")
 
         # Usar el mejor modelo
         self.model = random_search.best_estimator_
-        print("\n🔄 Training final model with best hyperparameters...")
+        print("\n🔄 Entrenando modelo final con los mejores hiperparámetros...")
         self.model.fit(self.X_train, self.y_train)
-        print("✅ Optimized model training completed")
+        print("✅ Entrenamiento del modelo optimizado completado")
 
         # Evaluar modelo optimizado
         self._evaluate_model(prefix="optimized")
@@ -210,30 +210,30 @@ class ModelTrainer:
 
         # Imprimir resultados
         print("\n" + "="*60)
-        print(f"📊 {prefix.upper()} MODEL - TRAINING SET")
+        print(f"📊 MODELO {prefix.upper()} - CONJUNTO DE ENTRENAMIENTO")
         print("="*60)
-        print(f"R² Score:                           {r2_train:.4f}")
-        print(f"MAE (Mean Absolute Error):          {mae_train:.4f}%")
-        print(f"MSE (Mean Squared Error):           {mse_train:.4f}")
-        print(f"RMSE (Root Mean Squared Error):     {rmse_train:.4f}%")
+        print(f"Puntaje R²:                         {r2_train:.4f}")
+        print(f"MAE (Error Absoluto Medio):         {mae_train:.4f}%")
+        print(f"MSE (Error Cuadrático Medio):       {mse_train:.4f}")
+        print(f"RMSE (Raíz del ECM):                {rmse_train:.4f}%")
 
         print("\n" + "="*60)
-        print(f"📊 {prefix.upper()} MODEL - TEST SET")
+        print(f"📊 MODELO {prefix.upper()} - CONJUNTO DE PRUEBA")
         print("="*60)
-        print(f"R² Score:                           {r2_test:.4f}")
-        print(f"MAE (Mean Absolute Error):          {mae_test:.4f}%")
-        print(f"MSE (Mean Squared Error):           {mse_test:.4f}")
-        print(f"RMSE (Root Mean Squared Error):     {rmse_test:.4f}%")
+        print(f"Puntaje R²:                         {r2_test:.4f}")
+        print(f"MAE (Error Absoluto Medio):         {mae_test:.4f}%")
+        print(f"MSE (Error Cuadrático Medio):       {mse_test:.4f}")
+        print(f"RMSE (Raíz del ECM):                {rmse_test:.4f}%")
 
         # Análisis de sobreajuste
         print("\n" + "="*60)
-        print("🔍 OVERFITTING ANALYSIS")
+        print("🔍 ANÁLISIS DE SOBREAJUSTE")
         print("="*60)
         diff_r2 = r2_train - r2_test
         diff_mae = mae_test - mae_train
 
-        print(f"R² difference (Train - Test):       {diff_r2:.4f}")
-        print(f"MAE difference (Test - Train):      {diff_mae:.4f}%")
+        print(f"R² diferencia (Train - Test):       {diff_r2:.4f}")
+        print(f"Diferencia MAE (Test - Train):      {diff_mae:.4f}%")
 
         if diff_r2 > 0.13:
             print("⚠️  Posible overfitting detectado (R² diferencia > 0.1)")
@@ -255,7 +255,7 @@ class ModelTrainer:
         pd.DataFrame : DataFrame de importancia de características
         """
         if self.model is None:
-            raise ValueError("Model has not been trained yet")
+            raise ValueError("El modelo aún no ha sido entrenado")
 
         importances = self.model.feature_importances_
 
@@ -279,7 +279,7 @@ class ModelTrainer:
             Ruta donde guardar el modelo
         """
         if self.model is None:
-            raise ValueError("Model has not been trained yet")
+            raise ValueError("El modelo aún no ha sido entrenado")
 
         model_data = {
             'model': self.model,
@@ -291,7 +291,7 @@ class ModelTrainer:
         with open(filepath, 'wb') as f:
             pickle.dump(model_data, f)
 
-        print(f"\n💾 Model saved: {filepath}")
+        print(f"\n💾 Modelo guardado: {filepath}")
 
     @staticmethod
     def load_model(filepath: str):
@@ -310,9 +310,9 @@ class ModelTrainer:
         with open(filepath, 'rb') as f:
             model_data = pickle.load(f)
 
-        print(f"✅ Model loaded: {filepath}")
-        print(f"  Model type: {model_data['model_type']}")
-        print(f"  Features: {len(model_data['feature_names'])}")
+        print(f"✅ Modelo cargado: {filepath}")
+        print(f"  Tipo de modelo: {model_data['model_type']}")
+        print(f"  Características: {len(model_data['feature_names'])}")
 
         return model_data
 
@@ -330,11 +330,11 @@ class ModelTrainer:
         np.ndarray : Predicciones
         """
         if self.model is None:
-            raise ValueError("Model has not been trained yet")
+            raise ValueError("El modelo aún no ha sido entrenado")
 
         # Asegurar que las características coinciden con los datos de entrenamiento
         if set(X.columns) != set(self.feature_names):
-            raise ValueError("Features don't match training data")
+            raise ValueError("Las características no coinciden con los datos de entrenamiento")
 
         # Reordenar columnas para coincidir con los datos de entrenamiento
         X = X[self.feature_names]
@@ -351,7 +351,7 @@ class ModelTrainer:
             Directorio donde guardar los gráficos
         """
         if self.model is None:
-            raise ValueError("Model has not been trained yet")
+            raise ValueError("El modelo aún no ha sido entrenado")
 
         # Predicciones
         y_pred_train = self.model.predict(self.X_train)
@@ -364,10 +364,10 @@ class ModelTrainer:
         axes[0].scatter(self.y_train, y_pred_train, alpha=0.5, s=10, color='steelblue')
         axes[0].plot([self.y_train.min(), self.y_train.max()],
                     [self.y_train.min(), self.y_train.max()],
-                    'r--', lw=2, label='Perfect Prediction')
-        axes[0].set_xlabel('Actual Values', fontweight='bold')
-        axes[0].set_ylabel('Predictions', fontweight='bold')
-        axes[0].set_title(f'Training Set (R² = {self.metrics.get("optimized_train", {}).get("R2", 0):.4f})',
+                    'r--', lw=2, label='Predicción perfecta')
+        axes[0].set_xlabel('Valores reales', fontweight='bold')
+        axes[0].set_ylabel('Predicciones', fontweight='bold')
+        axes[0].set_title(f'Conjunto de Entrenamiento (R² = {self.metrics.get("optimized_train", {}).get("R2", 0):.4f})',
                          fontweight='bold', fontsize=12)
         axes[0].legend()
         axes[0].grid(alpha=0.3)
@@ -376,10 +376,10 @@ class ModelTrainer:
         axes[1].scatter(self.y_test, y_pred_test, alpha=0.5, s=10, color='darkorange')
         axes[1].plot([self.y_test.min(), self.y_test.max()],
                     [self.y_test.min(), self.y_test.max()],
-                    'r--', lw=2, label='Perfect Prediction')
-        axes[1].set_xlabel('Actual Values', fontweight='bold')
-        axes[1].set_ylabel('Predictions', fontweight='bold')
-        axes[1].set_title(f'Test Set (R² = {self.metrics.get("optimized_test", {}).get("R2", 0):.4f})',
+                    'r--', lw=2, label='Predicción perfecta')
+        axes[1].set_xlabel('Valores reales', fontweight='bold')
+        axes[1].set_ylabel('Predicciones', fontweight='bold')
+        axes[1].set_title(f'Conjunto de Prueba (R² = {self.metrics.get("optimized_test", {}).get("R2", 0):.4f})',
                          fontweight='bold', fontsize=12)
         axes[1].legend()
         axes[1].grid(alpha=0.3)
@@ -396,12 +396,12 @@ class ModelTrainer:
                 feature_importance_df['Importance'],
                 color='darkorange', alpha=0.8)
         plt.yticks(range(len(feature_importance_df)), feature_importance_df['Feature'])
-        plt.xlabel('Importance', fontweight='bold')
-        plt.title(f'Top 15 Most Important Features ({self.model_type})',
+        plt.xlabel('Importancia', fontweight='bold')
+        plt.title(f'Top 15 Características Más Importantes ({self.model_type})',
                  fontweight='bold', fontsize=14)
         plt.gca().invert_yaxis()
         plt.tight_layout()
         plt.savefig(f'{save_dir}/evaluation_feature_importance.png', dpi=300, bbox_inches='tight')
         plt.close()
 
-        print(f"\n📊 Plots saved to '{save_dir}/' directory")
+        print(f"\n📊 Gráficos guardados en el directorio '{save_dir}/'")
