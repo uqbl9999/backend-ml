@@ -19,7 +19,7 @@ warnings.filterwarnings('ignore')
 class ModelTrainer:
     """Clase para gestionar el entrenamiento y la evaluación del modelo"""
 
-    def __init__(self, model_type: str = 'random_forest'):
+    def __init__(self, model_type: str = 'gradient_boosting'):
         """
         Inicializa el entrenador de modelos
 

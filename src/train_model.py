@@ -14,7 +14,7 @@ from src.data_preparation import DataPreparation
 from src.models.training import ModelTrainer
 
 
-def main(data_path: str, model_type: str = 'random_forest', optimize: bool = True):
+def main(data_path: str, model_type: str = 'gradient_boosting', optimize: bool = True):
     """
     Flujo principal de entrenamiento
 
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Entrenar modelo de predicción de tamizaje de salud mental')
     parser.add_argument('--data', type=str, default='tamizajes.csv',
                        help='Ruta al archivo CSV de datos crudos')
-    parser.add_argument('--model', type=str, default='random_forest',
+    parser.add_argument('--model', type=str, default='gradient_boosting',
                        choices=['gradient_boosting', 'random_forest'],
                        help='Tipo de modelo a entrenar')
     parser.add_argument('--no-optimize', action='store_true',

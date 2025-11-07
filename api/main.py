@@ -19,6 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.models.prediction import Predictor
 from src.services.ubigeo_service import get_ubigeo_service
 from src.services.xai_service import get_xai_service
+from src.services.statistics_service import get_statistics_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -41,12 +42,13 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'models', 'trained_mo
 predictor = None
 ubigeo_service = None
 xai_service = None
+statistics_service = None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Cargar modelo y servicio de ubigeo al iniciar"""
-    global predictor, ubigeo_service, xai_service
+    """Cargar modelo y servicios al iniciar"""
+    global predictor, ubigeo_service, xai_service, statistics_service
     try:
         predictor = Predictor(MODEL_PATH)
         print("✅ Modelo cargado correctamente")
@@ -71,6 +73,16 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Advertencia: No se pudo cargar el servicio XAI: {e}")
         print("    Las funciones de IA explicable no estarán disponibles")
+
+    try:
+        statistics_service = get_statistics_service()
+        if statistics_service:
+            print("✅ Servicio de estadísticas cargado correctamente")
+        else:
+            print("⚠️  Advertencia: Servicio de estadísticas no disponible")
+    except Exception as e:
+        print(f"⚠️  Advertencia: No se pudo cargar el servicio de estadísticas: {e}")
+        print("    Las funciones de estadísticas no estarán disponibles")
 
 
 # Request models
@@ -179,7 +191,15 @@ async def root():
             "predict_with_explanation": "/predict/explain",
             "model_info": "/model/info",
             "feature_importance": "/model/features",
-            "health": "/health"
+            "health": "/health",
+            "statistics": {
+                "descriptive_stats": "/statistics/descriptive",
+                "distribution_by_groups": "/statistics/distribution",
+                "heatmap_by_screening_type": "/statistics/heatmap/screening-type",
+                "heatmap_by_department": "/statistics/heatmap/department",
+                "screening_types_summary": "/statistics/screening-types",
+                "department_summary": "/statistics/departments"
+            }
         }
     }
 
@@ -504,6 +524,167 @@ async def get_ubigeo(departamento: str, provincia: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener ubigeo: {str(e)}")
+
+
+@app.get("/statistics/descriptive")
+async def get_descriptive_statistics():
+    """
+    Obtener estadísticas descriptivas sobre la tasa de positividad
+
+    Retorna media, mediana, desviación estándar y máximo de la tasa de positividad.
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        stats = statistics_service.get_descriptive_statistics()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener estadísticas descriptivas: {str(e)}")
+
+
+@app.get("/statistics/distribution")
+async def get_distribution_by_groups():
+    """
+    Obtener distribución por grupos de tamizaje
+
+    Retorna la distribución de registros y suma de casos por grupo:
+    - Total de Tamizajes
+    - Solo Tamizajes Positivos
+    - Tamizajes con Condición Adicional Violencia Política
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        distribution = statistics_service.get_distribution_by_groups()
+        return distribution
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener distribución: {str(e)}")
+
+
+@app.get("/statistics/heatmap/screening-type")
+async def get_heatmap_by_screening_type(grupo: Optional[str] = None):
+    """
+    Obtener heatmap de casos agregados por grupo de tamizaje y tipo específico
+
+    Parámetros:
+    - grupo: Filtro opcional por grupo ('TOTAL', 'POSITIVOS', o 'VIOLENCIA')
+
+    Retorna casos agregados por:
+    - Violencia Familiar
+    - Maltrato Infantil
+    - Trastorno Depresivo
+    - Consumo de Alcohol y Drogas
+    - Trastorno Psicótico
+    - Violencia Política (si aplica)
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        heatmap = statistics_service.get_heatmap_by_screening_type(grupo=grupo)
+        return {
+            "grupo_filtro": grupo if grupo else "todos",
+            "data": heatmap
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener heatmap por tipo: {str(e)}")
+
+
+@app.get("/statistics/heatmap/department")
+async def get_heatmap_by_department(
+    grupo: Optional[str] = None,
+    top_n: Optional[int] = None
+):
+    """
+    Obtener heatmap de casos agregados por departamento y grupo
+
+    Parámetros:
+    - grupo: Filtro opcional por grupo ('TOTAL', 'POSITIVOS', o 'VIOLENCIA')
+    - top_n: Limitar a los top N departamentos con más casos
+
+    Retorna volumen de casos por departamento y grupo de tamizaje.
+    Los departamentos se ordenan por total de casos (descendente).
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        if top_n is not None and (top_n < 1 or top_n > 50):
+            raise HTTPException(status_code=400, detail="top_n debe estar entre 1 y 50")
+
+        heatmap = statistics_service.get_heatmap_by_department(grupo=grupo, top_n=top_n)
+        return {
+            "grupo_filtro": grupo if grupo else "todos",
+            "top_n": top_n if top_n else "todos",
+            "data": heatmap
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener heatmap por departamento: {str(e)}")
+
+
+@app.get("/statistics/screening-types")
+async def get_screening_types_summary():
+    """
+    Obtener resumen de tipos de tamizaje con estadísticas
+
+    Retorna para cada tipo de tamizaje:
+    - Total de registros
+    - Suma total de casos
+    - Suma de positivos
+    - Tasa de positividad promedio, mediana y máxima
+
+    Los resultados se ordenan por suma total de casos (descendente).
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        summary = statistics_service.get_screening_types_summary()
+        return {
+            "count": len(summary),
+            "data": summary
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener resumen de tipos: {str(e)}")
+
+
+@app.get("/statistics/departments")
+async def get_department_summary(top_n: Optional[int] = None):
+    """
+    Obtener resumen de departamentos con estadísticas
+
+    Parámetros:
+    - top_n: Limitar a los top N departamentos con más casos
+
+    Retorna para cada departamento:
+    - Total de registros
+    - Suma total de casos
+    - Suma de positivos
+    - Tasa de positividad promedio, mediana y máxima
+
+    Los resultados se ordenan por suma total de casos (descendente).
+    """
+    if statistics_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de estadísticas no disponible")
+
+    try:
+        if top_n is not None and (top_n < 1 or top_n > 50):
+            raise HTTPException(status_code=400, detail="top_n debe estar entre 1 y 50")
+
+        summary = statistics_service.get_department_summary(top_n=top_n)
+        return {
+            "count": len(summary),
+            "top_n": top_n if top_n else "todos",
+            "data": summary
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener resumen de departamentos: {str(e)}")
 
 
 if __name__ == "__main__":
