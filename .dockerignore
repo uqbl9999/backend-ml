@@ -12,9 +12,15 @@ dist/
 build/
 
 # Data files
+# En producción necesitamos incluir los CSV clave en la imagen.
+# Se ignoran CSV en general para reducir el contexto, pero re‑incluimos los necesarios abajo.
 data/*.csv
 tamizajes.csv
 *.pkl
+
+# Re‑incluir datasets requeridos por la API
+!data/TB_UBIGEOS.csv
+!data/tamizajes.csv
 
 # Keep model artifacts in build context (override *.pkl)
 !models/**
