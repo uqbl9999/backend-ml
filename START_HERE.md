@@ -1,4 +1,4 @@
-# 🎯 START HERE - Proyecto Backend ML
+# 🎯 COMIENZA AQUÍ - Proyecto Backend ML
 
 ## 👋 Bienvenido
 
@@ -10,7 +10,7 @@ Este es tu proyecto de Backend con Machine Learning para predicción de tamizaje
 2. **[QUICKSTART.md](QUICKSTART.md)** - Instalación rápida (5 minutos)
 3. **[README.md](README.md)** - Documentación completa
 4. **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Resumen ejecutivo
-5. **[STRUCTURE.txt](STRUCTURE.txt)** - Estructura visual del proyecto
+5. **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)** - Estructura detallada del proyecto
 
 ## 🚀 Inicio Rápido (3 Pasos)
 
@@ -32,13 +32,15 @@ Luego abre: http://localhost:8000/docs
 
 ```
 backend-ml/
-├── src/           # Código fuente Python
-├── api/           # API REST con FastAPI
-├── models/        # Modelos entrenados (.pkl)
-├── data/          # Datasets procesados
-├── tests/         # Pruebas unitarias
-├── docs/          # Documentación técnica
-└── notebooks/     # Jupyter notebooks originales
+├── src/              # Código fuente Python
+│   ├── models/       # Módulos del modelo (training, prediction)
+│   └── services/     # Servicios (ubigeo, xai, statistics)
+├── api/              # API REST con FastAPI
+├── models/           # Modelos entrenados (.pkl)
+├── data/             # Datasets procesados y tabla de ubigeos
+├── tests/            # Pruebas unitarias
+├── docs/             # Documentación técnica
+└── notebooks/        # Jupyter notebooks experimentales
 ```
 
 ## ✅ Checklist de Entrega
@@ -150,11 +152,11 @@ curl -X POST "http://localhost:8000/predict" \
 from src.models.prediction import Predictor
 from src.services.ubigeo_service import get_ubigeo_service
 
-# Load model and ubigeo service
+# Cargar modelo y servicio de ubigeo
 predictor = Predictor('models/trained_model.pkl')
 ubigeo_service = get_ubigeo_service()
 
-# Get ubigeo from department and province
+# Obtener ubigeo desde departamento y provincia
 ubigeo = ubigeo_service.get_ubigeo_by_dept_prov('LIMA', 'LIMA')
 
 result = predictor.predict_single({
@@ -181,8 +183,8 @@ Después del entrenamiento:
 ## 🎯 Características Destacadas
 
 1. **Código Limpio**
-   - PEP 8 compliant
-   - Type hints
+   - Cumple con PEP 8
+   - Tipado con type hints
    - Docstrings completos
    - Comentarios explicativos
 
@@ -195,9 +197,9 @@ Después del entrenamiento:
    - FastAPI (framework moderno)
    - Documentación automática
    - Validación automática
-   - Type safety
+   - Seguridad de tipos
 
-4. **ML Pipeline Completo**
+4. **Pipeline ML Completo**
    - Preparación de datos
    - Balanceo de clases
    - Optimización de hiperparámetros
@@ -214,7 +216,7 @@ Después del entrenamiento:
 ### Error: "ModuleNotFoundError"
 **Solución**: Activa el entorno virtual y reinstala dependencias
 ```bash
-source venv/bin/activate
+source venv/bin/activate  # En Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 

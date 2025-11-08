@@ -1,62 +1,73 @@
-# Project Structure Documentation
+# Documentación de la Estructura del Proyecto
 
-## 📂 Directory Organization
+## 📂 Organización de Directorios
 
 ```
 backend-ml/
 │
-├── 📁 data/                          # Data storage (gitignored)
-│   ├── dataset_limpio.csv            # Cleaned data
-│   ├── df_clean_to_model.csv         # Encoded features
-│   └── dataset_balanceado.csv        # Balanced dataset
+├── 📁 data/                          # Almacenamiento de datos
+│   ├── dataset_limpio.csv            # Datos limpios
+│   ├── df_clean_to_model.csv         # Características codificadas
+│   ├── dataset_balanceado.csv        # Dataset balanceado
+│   ├── tamizajes.csv                 # Datos originales
+│   └── TB_UBIGEOS.csv               # Tabla de ubigeos de Perú
 │
-├── 📁 src/                           # Source code
-│   ├── data_preparation.py           # Data processing pipeline
-│   ├── train_model.py               # Training script
-│   ├── example_prediction.py        # Example usage
-│   └── 📁 models/                    # Model modules
+├── 📁 src/                           # Código fuente
+│   ├── data_preparation.py           # Pipeline de procesamiento de datos
+│   ├── train_model.py               # Script de entrenamiento
+│   ├── example_prediction.py        # Ejemplo de uso
+│   ├── 📁 models/                    # Módulos del modelo
+│   │   ├── __init__.py
+│   │   ├── training.py               # Lógica de entrenamiento
+│   │   └── prediction.py             # Lógica de predicción
+│   └── 📁 services/                  # Servicios adicionales
 │       ├── __init__.py
-│       ├── training.py               # Model training logic
-│       └── prediction.py             # Prediction logic
+│       ├── ubigeo_service.py         # Servicio de mapeo de ubigeos
+│       ├── xai_service.py            # Servicio de IA Explicable
+│       └── statistics_service.py     # Servicio de estadísticas
 │
-├── 📁 api/                           # REST API
-│   └── main.py                       # FastAPI application
+├── 📁 api/                           # API REST
+│   └── main.py                       # Aplicación FastAPI
 │
-├── 📁 models/                        # Trained models
-│   └── trained_model.pkl             # Serialized model
+├── 📁 models/                        # Modelos entrenados
+│   └── trained_model.pkl             # Modelo serializado
 │
-├── 📁 docs/                          # Documentation & plots
-│   ├── evaluation_*.png              # Evaluation plots
-│   └── PROJECT_STRUCTURE.md          # This file
+├── 📁 docs/                          # Documentación y gráficos
+│   ├── evaluation_*.png              # Gráficos de evaluación
+│   ├── PROJECT_STRUCTURE.md          # Este archivo
+│   ├── XAI_GUIDE.md                 # Guía de IA Explicable
+│   └── STATISTICS_API.md            # Documentación de API de estadísticas
 │
-├── 📁 tests/                         # Unit tests
-│   └── test_prediction.py            # Prediction tests
+├── 📁 tests/                         # Pruebas unitarias
+│   └── test_prediction.py            # Pruebas de predicción
 │
 ├── 📁 notebooks/                     # Jupyter notebooks
-│   └── parcialfinal.ipynb           # Original exploration
+│   └── parcialfinal.ipynb           # Exploración original
 │
-├── 📄 requirements.txt               # Python dependencies
-├── 📄 README.md                      # Main documentation
-├── 📄 QUICKSTART.md                  # Quick start guide
-└── 📄 .gitignore                     # Git ignore rules
+├── 📄 requirements.txt               # Dependencias de Python
+├── 📄 README.md                      # Documentación principal
+├── 📄 QUICKSTART.md                  # Guía de inicio rápido
+├── 📄 START_HERE.md                  # Orientación inicial
+├── 📄 PROJECT_SUMMARY.md             # Resumen ejecutivo
+└── 📄 .gitignore                     # Reglas de Git ignore
 ```
 
-## 🔄 Data Flow
+## 🔄 Flujo de Datos
 
 ```
 ┌─────────────────┐
-│  tamizajes.csv  │  Raw Data
+│  tamizajes.csv  │  Datos Originales
 └────────┬────────┘
          │
          ▼
 ┌─────────────────────────────┐
 │  data_preparation.py        │
 │  ┌─────────────────────┐   │
-│  │ 1. Load Data        │   │
-│  │ 2. Calculate Rate   │   │
-│  │ 3. Clean Data       │   │
-│  │ 4. Feature Eng.     │   │
-│  │ 5. Balance Data     │   │
+│  │ 1. Cargar Datos     │   │
+│  │ 2. Calcular Tasa    │   │
+│  │ 3. Limpiar Datos    │   │
+│  │ 4. Ing. Features    │   │
+│  │ 5. Balancear Datos  │   │
 │  └─────────────────────┘   │
 └──────────┬──────────────────┘
            │
@@ -64,27 +75,27 @@ backend-ml/
 ┌─────────────────────────────┐
 │  training.py                │
 │  ┌─────────────────────┐   │
-│  │ 1. Split Data       │   │
-│  │ 2. Train Base Model │   │
-│  │ 3. Optimize Params  │   │
-│  │ 4. Evaluate         │   │
-│  │ 5. Save Model       │   │
+│  │ 1. Dividir Datos    │   │
+│  │ 2. Entrenar Modelo  │   │
+│  │ 3. Optimizar Params │   │
+│  │ 4. Evaluar          │   │
+│  │ 5. Guardar Modelo   │   │
 │  └─────────────────────┘   │
 └──────────┬──────────────────┘
            │
            ▼
 ┌─────────────────────────────┐
-│  trained_model.pkl          │  Saved Model
+│  trained_model.pkl          │  Modelo Guardado
 └──────────┬──────────────────┘
            │
            ▼
 ┌─────────────────────────────┐
 │  prediction.py              │
 │  ┌─────────────────────┐   │
-│  │ 1. Load Model       │   │
-│  │ 2. Prepare Features │   │
-│  │ 3. Make Prediction  │   │
-│  │ 4. Interpret Result │   │
+│  │ 1. Cargar Modelo    │   │
+│  │ 2. Preparar Features│   │
+│  │ 3. Hacer Predicción │   │
+│  │ 4. Interpretar      │   │
 │  └─────────────────────┘   │
 └──────────┬──────────────────┘
            │
@@ -92,79 +103,107 @@ backend-ml/
 ┌─────────────────────────────┐
 │  FastAPI (main.py)          │
 │  ┌─────────────────────┐   │
-│  │ REST Endpoints      │   │
+│  │ Endpoints REST      │   │
 │  │ - /predict          │   │
+│  │ - /predict/explain  │   │
 │  │ - /predict/batch    │   │
-│  │ - /model/info       │   │
+│  │ - /statistics/*     │   │
 │  └─────────────────────┘   │
 └──────────┬──────────────────┘
            │
            ▼
 ┌─────────────────────────────┐
-│  Client (Web/Mobile/API)    │
+│  Cliente (Web/Mobile/API)   │
 └─────────────────────────────┘
 ```
 
-## 🏗️ Architecture Pattern
+## 🏗️ Patrón de Arquitectura
 
-This project follows a **simplified layered architecture**:
+Este proyecto sigue una **arquitectura de capas simplificada**:
 
-### 1. Data Layer (`src/data_preparation.py`)
-- **Responsibility**: Data loading, cleaning, transformation
-- **Input**: Raw CSV files
-- **Output**: Processed, balanced datasets ready for ML
+### 1. Capa de Datos (`src/data_preparation.py`)
+- **Responsabilidad**: Carga, limpieza y transformación de datos
+- **Entrada**: Archivos CSV originales
+- **Salida**: Datasets procesados y balanceados listos para ML
 
-### 2. Model Layer (`src/models/`)
+### 2. Capa de Modelo (`src/models/`)
 - **training.py**
-  - **Responsibility**: Model training, optimization, evaluation
-  - **Input**: Prepared datasets
-  - **Output**: Trained model (.pkl file)
+  - **Responsabilidad**: Entrenamiento, optimización y evaluación del modelo
+  - **Entrada**: Datasets preparados
+  - **Salida**: Modelo entrenado (archivo .pkl)
 
 - **prediction.py**
-  - **Responsibility**: Load model, make predictions
-  - **Input**: Feature dictionary
-  - **Output**: Prediction + interpretation
+  - **Responsabilidad**: Cargar modelo y realizar predicciones
+  - **Entrada**: Diccionario de características
+  - **Salida**: Predicción + interpretación
 
-### 3. API Layer (`api/main.py`)
-- **Responsibility**: REST endpoints, validation, error handling
-- **Input**: HTTP requests (JSON)
-- **Output**: HTTP responses (JSON)
+### 3. Capa de Servicios (`src/services/`)
+- **ubigeo_service.py**
+  - **Responsabilidad**: Mapeo de ubicaciones geográficas
+  - **Funcionalidad**: Convertir Departamento + Provincia a Ubigeo
+
+- **xai_service.py**
+  - **Responsabilidad**: Generar explicaciones de predicciones
+  - **Funcionalidad**: Usar Perplexity AI para explicar resultados
+
+- **statistics_service.py**
+  - **Responsabilidad**: Calcular estadísticas descriptivas
+  - **Funcionalidad**: Heatmaps, distribuciones, resúmenes
+
+### 4. Capa de API (`api/main.py`)
+- **Responsabilidad**: Endpoints REST, validación, manejo de errores
+- **Entrada**: Peticiones HTTP (JSON)
+- **Salida**: Respuestas HTTP (JSON)
 - **Framework**: FastAPI
 
-### 4. Interface Layer (External)
-- **Responsibility**: User interaction
-- **Tools**: Swagger UI, curl, client applications
+### 5. Capa de Interfaz (Externa)
+- **Responsabilidad**: Interacción con el usuario
+- **Herramientas**: Swagger UI, curl, aplicaciones cliente
 
-## 🔌 API Endpoints Architecture
+## 🔌 Arquitectura de Endpoints de la API
 
 ```
-FastAPI Application (main.py)
+Aplicación FastAPI (main.py)
 │
 ├── Middleware
 │   └── CORS
 │
-├── Startup Events
-│   └── Load Model
+├── Eventos de Inicio
+│   ├── Cargar Modelo
+│   ├── Cargar Servicio de Ubigeo
+│   ├── Cargar Servicio XAI (opcional)
+│   └── Cargar Servicio de Estadísticas
 │
-├── Health & Info Endpoints
+├── Endpoints de Salud e Info
 │   ├── GET /
 │   ├── GET /health
 │   └── GET /model/info
 │
-├── Prediction Endpoints
+├── Endpoints de Predicción
 │   ├── POST /predict          → predict_single()
+│   ├── POST /predict/explain  → predict_with_explanation()
 │   └── POST /predict/batch    → predict_batch()
 │
-├── Model Info Endpoints
+├── Endpoints de Info del Modelo
 │   └── GET /model/features    → get_feature_importance()
 │
-└── Metadata Endpoints
-    ├── GET /metadata/departamentos
-    ├── GET /metadata/tamizajes
-    └── GET /metadata/etapas
+├── Endpoints de Metadatos
+│   ├── GET /metadata/departamentos
+│   ├── GET /metadata/provincias/{dept}
+│   ├── GET /metadata/ubigeo/{dept}/{prov}
+│   ├── GET /metadata/tamizajes
+│   └── GET /metadata/etapas
+│
+└── Endpoints de Estadísticas
+    ├── GET /statistics/descriptive
+    ├── GET /statistics/distribution
+    ├── GET /statistics/heatmap/screening-type
+    ├── GET /statistics/heatmap/department
+    ├── GET /statistics/screening-types
+    └── GET /statistics/departments
 ```
 
-## 🧩 Class Diagram
+## 🧩 Diagrama de Clases
 
 ```
 ┌──────────────────────────┐
@@ -221,122 +260,124 @@ FastAPI Application (main.py)
 └──────────────────────────┘
 ```
 
-## 🔐 Security Considerations
+## 🔐 Consideraciones de Seguridad
 
-Current implementation (Development):
-- ✅ Input validation (Pydantic models)
-- ✅ CORS enabled for all origins
-- ❌ No authentication
-- ❌ No rate limiting
-- ❌ No logging
+Implementación actual (Desarrollo):
+- ✅ Validación de entrada (modelos Pydantic)
+- ✅ CORS habilitado para todos los orígenes
+- ❌ Sin autenticación
+- ❌ Sin rate limiting
+- ❌ Sin logging
 
-Recommended for Production:
-- 🔒 Add JWT authentication
-- 🔒 Implement API key system
-- 🔒 Add rate limiting
-- 🔒 Restrict CORS origins
-- 🔒 Add comprehensive logging
-- 🔒 Use HTTPS
-- 🔒 Add input sanitization
-- 🔒 Implement monitoring
+Recomendado para Producción:
+- 🔒 Agregar autenticación JWT
+- 🔒 Implementar sistema de API keys
+- 🔒 Agregar rate limiting
+- 🔒 Restringir orígenes CORS
+- 🔒 Agregar logging completo
+- 🔒 Usar HTTPS
+- 🔒 Agregar sanitización de entrada
+- 🔒 Implementar monitoreo
 
-## 📊 Model Pipeline
+## 📊 Pipeline del Modelo
 
 ```
-Training Phase:
+Fase de Entrenamiento:
 ┌────────────┐    ┌───────────┐    ┌──────────┐    ┌────────────┐
-│  Raw Data  │ -> │  Clean &  │ -> │ Balance  │ -> │   Train    │
-│            │    │  Encode   │    │          │    │            │
+│   Datos    │ -> │  Limpiar &│ -> │ Balancear│ -> │  Entrenar  │
+│  Originales│    │  Codificar│    │          │    │            │
 └────────────┘    └───────────┘    └──────────┘    └────────────┘
                                                            │
                                                            ▼
                                                     ┌────────────┐
-                                                    │   Save     │
-                                                    │  Model.pkl │
+                                                    │  Guardar   │
+                                                    │ Model.pkl  │
                                                     └────────────┘
 
-Prediction Phase:
+Fase de Predicción:
 ┌────────────┐    ┌───────────┐    ┌──────────┐    ┌────────────┐
-│   Input    │ -> │  Prepare  │ -> │  Predict │ -> │  Interpret │
+│  Entrada   │ -> │  Preparar │ -> │ Predecir │ -> │ Interpretar│
 │   JSON     │    │  Features │    │          │    │            │
 └────────────┘    └───────────┘    └──────────┘    └────────────┘
 ```
 
-## 🎯 Design Decisions
+## 🎯 Decisiones de Diseño
 
-### Why This Structure?
+### ¿Por Qué Esta Estructura?
 
-1. **Separation of Concerns**
-   - Data prep is independent of model training
-   - Prediction logic is separate from API logic
-   - Easy to modify one component without affecting others
+1. **Separación de Responsabilidades**
+   - La preparación de datos es independiente del entrenamiento
+   - La lógica de predicción está separada de la lógica de la API
+   - Fácil modificar un componente sin afectar otros
 
-2. **Simplicity First**
-   - Chose simple structure over complex DDD
-   - Appropriate for academic/small-scale project
-   - Easy to understand and maintain
+2. **Simplicidad Primero**
+   - Se eligió estructura simple sobre DDD complejo
+   - Apropiado para proyecto académico/pequeña escala
+   - Fácil de entender y mantener
 
-3. **Scalability Path**
-   - Clear structure allows easy migration to DDD if needed
-   - Can add layers (caching, queuing) without major refactor
-   - API design supports multiple clients
+3. **Camino de Escalabilidad**
+   - Estructura clara permite migración fácil a DDD si se necesita
+   - Se pueden agregar capas (caché, colas) sin refactorización mayor
+   - Diseño de API soporta múltiples clientes
 
-4. **Testability**
-   - Each module can be tested independently
-   - Mock data/models easily
-   - Unit tests for critical functions
+4. **Testeabilidad**
+   - Cada módulo puede ser testeado independientemente
+   - Fácil crear mocks de datos/modelos
+   - Pruebas unitarias para funciones críticas
 
-### Why FastAPI?
+### ¿Por Qué FastAPI?
 
-- ✅ Automatic API documentation (Swagger/ReDoc)
-- ✅ Type validation with Pydantic
-- ✅ Async support (future scalability)
-- ✅ Modern Python (3.8+)
-- ✅ Fast performance
-- ✅ Easy to learn
+- ✅ Documentación automática de API (Swagger/ReDoc)
+- ✅ Validación de tipos con Pydantic
+- ✅ Soporte asíncrono (escalabilidad futura)
+- ✅ Python moderno (3.8+)
+- ✅ Alto rendimiento
+- ✅ Fácil de aprender
 
-### Why Pickle for Model?
+### ¿Por Qué Pickle para el Modelo?
 
-- ✅ Standard scikit-learn serialization
-- ✅ Preserves entire model state
-- ✅ Easy to load and use
-- ⚠️  Not secure for untrusted sources
-- ⚠️  Python version dependent
+- ✅ Serialización estándar de scikit-learn
+- ✅ Preserva todo el estado del modelo
+- ✅ Fácil de cargar y usar
+- ⚠️  No seguro para fuentes no confiables
+- ⚠️  Dependiente de la versión de Python
 
-Alternative: ONNX (for production/cross-platform)
+Alternativa: ONNX (para producción/multiplataforma)
 
-## 📈 Future Enhancements
+## 📈 Mejoras Futuras
 
-Potential improvements:
+Mejoras potenciales:
 
-1. **Add Caching Layer** (Redis)
-   - Cache frequent predictions
-   - Store model in memory
+1. **Agregar Capa de Caché** (Redis)
+   - Cachear predicciones frecuentes
+   - Almacenar modelo en memoria
 
-2. **Add Database** (PostgreSQL)
-   - Store prediction history
-   - User management
-   - Analytics
+2. **Agregar Base de Datos** (PostgreSQL)
+   - Almacenar historial de predicciones
+   - Gestión de usuarios
+   - Analíticas
 
-3. **Add Message Queue** (RabbitMQ/Celery)
-   - Async batch predictions
-   - Model retraining jobs
+3. **Agregar Cola de Mensajes** (RabbitMQ/Celery)
+   - Predicciones en lote asíncronas
+   - Trabajos de reentrenamiento del modelo
 
-4. **Add Monitoring** (Prometheus/Grafana)
-   - API metrics
-   - Model performance drift
-   - Error tracking
+4. **Agregar Monitoreo** (Prometheus/Grafana)
+   - Métricas de la API
+   - Drift del rendimiento del modelo
+   - Seguimiento de errores
 
-5. **Containerization** (Docker)
-   - Easy deployment
-   - Environment consistency
+5. **Containerización** (Docker)
+   - Despliegue fácil
+   - Consistencia de entorno
 
-6. **CI/CD Pipeline** (GitHub Actions)
-   - Automated testing
-   - Automated deployment
+6. **Pipeline CI/CD** (GitHub Actions)
+   - Pruebas automatizadas
+   - Despliegue automatizado
 
-## 📚 Related Documentation
+## 📚 Documentación Relacionada
 
-- [README.md](../README.md) - Main documentation
-- [QUICKSTART.md](../QUICKSTART.md) - Quick start guide
-- [API Documentation](http://localhost:8000/docs) - Interactive API docs (when running)
+- [README.md](../README.md) - Documentación principal
+- [QUICKSTART.md](../QUICKSTART.md) - Guía de inicio rápido
+- [XAI_GUIDE.md](XAI_GUIDE.md) - Guía de IA Explicable
+- [STATISTICS_API.md](STATISTICS_API.md) - Documentación de API de estadísticas
+- [Documentación de API](http://localhost:8000/docs) - Docs interactivas de la API (cuando esté corriendo)

@@ -29,6 +29,7 @@ backend-ml/
 ├── src/                           # Código fuente
 │   ├── data_preparation.py        # Preparación y limpieza de datos
 │   ├── train_model.py            # Script de entrenamiento
+│   ├── example_prediction.py     # Ejemplo de uso del predictor
 │   ├── models/                    # Módulos del modelo
 │   │   ├── __init__.py
 │   │   ├── training.py            # Entrenamiento del modelo
@@ -36,7 +37,8 @@ backend-ml/
 │   └── services/                  # Servicios adicionales
 │       ├── __init__.py
 │       ├── ubigeo_service.py      # Mapeo Departamento+Provincia→Ubigeo
-│       └── xai_service.py         # Servicio de IA Explicable (XAI)
+│       ├── xai_service.py         # Servicio de IA Explicable (XAI)
+│       └── statistics_service.py  # Servicio de estadísticas descriptivas
 │
 ├── api/                           # API REST
 │   └── main.py                    # FastAPI application
@@ -396,6 +398,19 @@ GET /metadata/tamizajes               # Lista de tipos de tamizaje
 GET /metadata/etapas                  # Lista de grupos etarios
 ```
 
+### Estadísticas
+
+```bash
+GET /statistics/descriptive           # Estadísticas descriptivas (media, mediana, etc.)
+GET /statistics/distribution          # Distribución por grupos de tamizaje
+GET /statistics/heatmap/screening-type  # Heatmap por tipo de tamizaje
+GET /statistics/heatmap/department    # Heatmap por departamento
+GET /statistics/screening-types       # Resumen por tipo de tamizaje
+GET /statistics/departments           # Resumen por departamento
+```
+
+**Nota:** Para más detalles sobre los endpoints de estadísticas, consulta [docs/STATISTICS_API.md](docs/STATISTICS_API.md)
+
 ### Health Check
 
 ```bash
@@ -428,6 +443,12 @@ curl http://localhost:8000/health
 
 # Feature importance
 curl http://localhost:8000/model/features?top_n=5
+
+# Estadísticas descriptivas
+curl http://localhost:8000/statistics/descriptive
+
+# Distribución por grupos
+curl http://localhost:8000/statistics/distribution
 ```
 
 ## 📊 Valores Válidos para Predicciones

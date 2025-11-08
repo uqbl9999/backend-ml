@@ -167,7 +167,7 @@ Perplexity AI recibe instrucciones para generar:
 - **Por defecto**: `sonar` (basado en Llama 3.3 70B)
 - **Motivo**: Ligero, económico y con acceso a información actualizada
 - **Tokens promedio**: ~500 tokens por explicación
-- **Lanzamiento**: Febrero 2025 (última generación)
+- **Lanzamiento**: Enero 2025 (última generación)
 
 ### Estimación de Costos
 
@@ -219,7 +219,7 @@ Si Perplexity AI falla, el sistema retorna:
 Puedes usar un modelo diferente editando `xai_service.py`:
 
 ```python
-# Modelos disponibles en Perplexity (2025):
+# Modelos disponibles en Perplexity (Enero 2025):
 # - sonar (ligero, económico, recomendado para producción)
 # - sonar-pro (avanzado, mejor calidad con grounding mejorado)
 

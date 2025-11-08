@@ -1,127 +1,140 @@
-# 📊 Project Summary - Mental Health Screening Prediction
+# 📊 Resumen del Proyecto - Predicción de Tamizajes de Salud Mental
 
-## 🎯 Project Overview
+## 🎯 Descripción General del Proyecto
 
-**Name**: Backend ML - Mental Health Screening Prediction API
+**Nombre**: Backend ML - API de Predicción de Tamizajes de Salud Mental
 
-**Purpose**: Predecir la tasa de positividad de tamizajes de salud mental en Perú para optimizar la asignación de recursos hospitalarios y personal médico especializado.
+**Propósito**: Predecir la tasa de positividad de tamizajes de salud mental en Perú para optimizar la asignación de recursos hospitalarios y personal médico especializado.
 
-**Technology Stack**:
+**Stack Tecnológico**:
 - Python 3.8+
 - FastAPI (REST API)
 - Scikit-learn (Machine Learning)
-- Pandas/NumPy (Data Processing)
-- Uvicorn (ASGI Server)
+- Pandas/NumPy (Procesamiento de Datos)
+- Uvicorn (Servidor ASGI)
 
-## 📁 Project Structure
+## 📁 Estructura del Proyecto
 
 ```
 backend-ml/
-├── src/                # Source code modules
-│   ├── models/         # ML model classes
-│   └── services/       # Additional services (ubigeo mapping)
-├── api/                # FastAPI application
-├── models/             # Trained ML models
-├── data/               # Processed datasets (includes TB_UBIGEOS.csv)
-├── tests/              # Unit tests
-├── docs/               # Documentation
+├── src/                # Módulos de código fuente
+│   ├── models/         # Clases del modelo ML
+│   └── services/       # Servicios adicionales (ubigeo, xai, statistics)
+├── api/                # Aplicación FastAPI
+├── models/             # Modelos ML entrenados
+├── data/               # Datasets procesados (incluye TB_UBIGEOS.csv)
+├── tests/              # Pruebas unitarias
+├── docs/               # Documentación
 └── notebooks/          # Jupyter notebooks
 ```
 
-## 🚀 Quick Commands
+## 🚀 Comandos Rápidos
 
 ```bash
-# Setup
+# Configuración
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# Train Model
+# Entrenar Modelo
 python src/train_model.py
 
-# Start API
+# Iniciar API
 uvicorn api.main:app --reload
 
-# Test
+# Probar
 python src/example_prediction.py
 pytest tests/
 
-# API Documentation
+# Documentación API
 open http://localhost:8000/docs
 ```
 
-## 📊 Key Features
+## 📊 Características Principales
 
-### 1. Data Preparation (`src/data_preparation.py`)
-- ✅ Load and clean data
-- ✅ Calculate positivity rates
-- ✅ Feature engineering (one-hot encoding)
-- ✅ Data balancing (SMOTE-like algorithm)
-- ✅ Save intermediate datasets
+### 1. Preparación de Datos (`src/data_preparation.py`)
+- ✅ Carga y limpieza de datos
+- ✅ Cálculo de tasas de positividad
+- ✅ Ingeniería de características (codificación one-hot)
+- ✅ Balanceo de datos (algoritmo tipo SMOTE)
+- ✅ Guardado de datasets intermedios
 
-### 2. Model Training (`src/models/training.py`)
-- ✅ Support for Gradient Boosting and Random Forest
-- ✅ Hyperparameter optimization (RandomizedSearchCV)
-- ✅ Cross-validation
-- ✅ Performance metrics (R², MAE, RMSE)
-- ✅ Feature importance analysis
-- ✅ Model serialization
-- ✅ Evaluation plots
+### 2. Entrenamiento del Modelo (`src/models/training.py`)
+- ✅ Soporte para Gradient Boosting y Random Forest
+- ✅ Optimización de hiperparámetros (RandomizedSearchCV)
+- ✅ Validación cruzada
+- ✅ Métricas de rendimiento (R², MAE, RMSE)
+- ✅ Análisis de importancia de características
+- ✅ Serialización del modelo
+- ✅ Gráficos de evaluación
 
-### 3. Prediction (`src/models/prediction.py`)
-- ✅ Single and batch predictions
-- ✅ Input validation
-- ✅ Automatic risk interpretation
-- ✅ Feature importance extraction
-- ✅ Model information retrieval
+### 3. Predicción (`src/models/prediction.py`)
+- ✅ Predicciones individuales y en lote
+- ✅ Validación de entrada
+- ✅ Interpretación automática del riesgo
+- ✅ Extracción de importancia de características
+- ✅ Obtención de información del modelo
 
-### 4. REST API (`api/main.py`)
-- ✅ FastAPI framework
-- ✅ Automatic documentation (Swagger/ReDoc)
-- ✅ Input validation with Pydantic
-- ✅ CORS support
-- ✅ Health check endpoint
-- ✅ Metadata endpoints
-- ✅ Error handling
-- ✅ Automatic Ubigeo mapping from Dept+Province
+### 4. API REST (`api/main.py`)
+- ✅ Framework FastAPI
+- ✅ Documentación automática (Swagger/ReDoc)
+- ✅ Validación de entrada con Pydantic
+- ✅ Soporte CORS
+- ✅ Endpoint de health check
+- ✅ Endpoints de metadatos
+- ✅ Manejo de errores
+- ✅ Mapeo automático de Ubigeo desde Dept+Provincia
 
-### 5. Ubigeo Service (`src/services/ubigeo_service.py`)
-- ✅ Automatic mapping Departamento + Provincia → Ubigeo
-- ✅ Province listing by department
-- ✅ Location validation
-- ✅ Support for 1,892 ubigeos across Peru
+### 5. Servicio de Ubigeo (`src/services/ubigeo_service.py`)
+- ✅ Mapeo automático Departamento + Provincia → Ubigeo
+- ✅ Listado de provincias por departamento
+- ✅ Validación de ubicación
+- ✅ Soporte para 1,892 ubigeos en todo Perú
 
-## 🎯 API Endpoints
+### 6. Servicio de Estadísticas (`src/services/statistics_service.py`)
+- ✅ Estadísticas descriptivas sobre tamizajes
+- ✅ Distribución por grupos
+- ✅ Heatmaps por tipo y departamento
+- ✅ Resúmenes agregados
 
-| Endpoint | Method | Description |
+## 🎯 Endpoints de la API
+
+| Endpoint | Método | Descripción |
 |----------|--------|-------------|
-| `/` | GET | API information |
-| `/health` | GET | Health check |
-| `/predict` | POST | Single prediction |
-| `/predict/batch` | POST | Batch predictions |
-| `/model/info` | GET | Model information |
-| `/model/features` | GET | Feature importance |
-| `/metadata/departamentos` | GET | Valid departments |
-| `/metadata/provincias/{dept}` | GET | Provinces by department |
-| `/metadata/ubigeo/{dept}/{prov}` | GET | Ubigeo from dept+province |
-| `/metadata/tamizajes` | GET | Valid screening types |
-| `/metadata/etapas` | GET | Valid age groups |
+| `/` | GET | Información de la API |
+| `/health` | GET | Verificación de salud |
+| `/predict` | POST | Predicción individual |
+| `/predict/explain` | POST | Predicción con explicación XAI |
+| `/predict/batch` | POST | Predicciones en lote |
+| `/model/info` | GET | Información del modelo |
+| `/model/features` | GET | Importancia de características |
+| `/metadata/departamentos` | GET | Departamentos válidos |
+| `/metadata/provincias/{dept}` | GET | Provincias por departamento |
+| `/metadata/ubigeo/{dept}/{prov}` | GET | Ubigeo desde dept+provincia |
+| `/metadata/tamizajes` | GET | Tipos de tamizaje válidos |
+| `/metadata/etapas` | GET | Grupos etarios válidos |
+| `/statistics/descriptive` | GET | Estadísticas descriptivas |
+| `/statistics/distribution` | GET | Distribución por grupos |
+| `/statistics/heatmap/screening-type` | GET | Heatmap por tipo de tamizaje |
+| `/statistics/heatmap/department` | GET | Heatmap por departamento |
+| `/statistics/screening-types` | GET | Resumen por tipo de tamizaje |
+| `/statistics/departments` | GET | Resumen por departamento |
 
-## 📈 Model Performance
+## 📈 Rendimiento del Modelo
 
-**Expected Metrics** (after optimization):
+**Métricas Esperadas** (después de optimización):
 - R² Score: ~0.65-0.70
 - MAE: ~8-12%
 - RMSE: ~10-15%
 
-**Features Used**: 43 features including:
-- Temporal: Month
-- Geographic: Department, UBIGEO
-- Demographic: Sex, Age Group
-- Clinical: Screening Type
+**Características Usadas**: 43 características incluyendo:
+- Temporal: Mes
+- Geográficas: Departamento, UBIGEO
+- Demográficas: Sexo, Grupo Etario
+- Clínicas: Tipo de Tamizaje
 
-## 🔍 Input Format
+## 🔍 Formato de Entrada
 
-**With Automatic Ubigeo Mapping** (Recommended):
+**Con Mapeo Automático de Ubigeo** (Recomendado):
 ```json
 {
   "NroMes": 11,
@@ -133,7 +146,7 @@ open http://localhost:8000/docs
 }
 ```
 
-**Direct Ubigeo** (Optional):
+**Ubigeo Directo** (Opcional):
 ```json
 {
   "NroMes": 11,
@@ -146,7 +159,7 @@ open http://localhost:8000/docs
 }
 ```
 
-## 📊 Output Format
+## 📊 Formato de Salida
 
 ```json
 {
@@ -164,160 +177,163 @@ open http://localhost:8000/docs
 }
 ```
 
-## 🏆 Risk Categories
+## 🏆 Categorías de Riesgo
 
-| Rate | Category | Recommendation |
-|------|----------|----------------|
+| Tasa | Categoría | Recomendación |
+|------|-----------|---------------|
 | < 2% | Muy Bajo | Bajo requerimiento de recursos |
 | 2-5% | Bajo | Requerimiento normal de recursos |
 | 5-10% | Moderado | Incrementar disponibilidad de personal |
 | 10-20% | Alto | Priorizar asignación de especialistas |
 | > 20% | Muy Alto | Intervención urgente requerida |
 
-## 📚 Documentation Files
+## 📚 Archivos de Documentación
 
-- **README.md** - Complete documentation
-- **QUICKSTART.md** - Quick start guide (5 minutes)
-- **PROJECT_STRUCTURE.md** - Architecture details
-- **PROJECT_SUMMARY.md** - This file
+- **README.md** - Documentación completa
+- **QUICKSTART.md** - Guía de inicio rápido (5 minutos)
+- **docs/PROJECT_STRUCTURE.md** - Detalles de arquitectura
+- **docs/XAI_GUIDE.md** - Guía de IA Explicable
+- **docs/STATISTICS_API.md** - Documentación de API de estadísticas
+- **PROJECT_SUMMARY.md** - Este archivo
 
-## 🧪 Testing
+## 🧪 Pruebas
 
 ```bash
-# Run all tests
+# Ejecutar todas las pruebas
 pytest tests/ -v
 
-# Run specific test
+# Ejecutar prueba específica
 pytest tests/test_prediction.py::test_make_prediction -v
 
-# Run with coverage
+# Ejecutar con cobertura
 pytest tests/ --cov=src
 ```
 
-## 🛠️ Development Workflow
+## 🛠️ Flujo de Desarrollo
 
-1. **Data Preparation**
+1. **Preparación de Datos**
    ```bash
    python -c "from src.data_preparation import DataPreparation; dp = DataPreparation('tamizajes.csv'); dp.prepare_full_pipeline()"
    ```
 
-2. **Model Training**
+2. **Entrenamiento del Modelo**
    ```bash
    python src/train_model.py --model gradient_boosting
    ```
 
-3. **Testing Predictions**
+3. **Probar Predicciones**
    ```bash
    python src/example_prediction.py
    ```
 
-4. **Start API**
+4. **Iniciar API**
    ```bash
    uvicorn api.main:app --reload
    ```
 
-5. **Test API**
-   - Browser: `http://localhost:8000/docs`
-   - cURL: See QUICKSTART.md
+5. **Probar API**
+   - Navegador: `http://localhost:8000/docs`
+   - cURL: Ver QUICKSTART.md
 
-## 📦 Dependencies
+## 📦 Dependencias
 
 **Core**:
-- pandas, numpy (data processing)
+- pandas, numpy (procesamiento de datos)
 - scikit-learn, scipy (ML)
-- matplotlib, seaborn (visualization)
+- matplotlib, seaborn (visualización)
 
 **API**:
-- fastapi, uvicorn (web framework)
-- pydantic (validation)
+- fastapi, uvicorn (framework web)
+- pydantic (validación)
+- requests (servicios XAI)
 
-**Development**:
-- jupyter, notebook (exploration)
-- pytest (testing)
+**Desarrollo**:
+- jupyter, notebook (exploración)
+- pytest (pruebas)
 
-## 🎓 Academic Context
+## 🎓 Contexto Académico
 
-**Course**: Machine Learning
-**Task**: Final Project - Backend Implementation
-**Dataset**: Mental health screening data from Peru (2017)
-**Objective**: Develop ML model + REST API for healthcare resource optimization
+**Curso**: Machine Learning
+**Tarea**: Proyecto Final - Implementación de Backend
+**Dataset**: Datos de tamizajes de salud mental de Perú (2017)
+**Objetivo**: Desarrollar modelo ML + API REST para optimización de recursos de salud
 
-## ⚡ Performance Characteristics
+## ⚡ Características de Rendimiento
 
-**Training Time**:
-- Base model: ~30-60 seconds
-- With optimization: ~5-10 minutes
+**Tiempo de Entrenamiento**:
+- Modelo base: ~30-60 segundos
+- Con optimización: ~5-10 minutos
 
-**Prediction Time**:
-- Single: < 50ms
-- Batch (100): < 500ms
+**Tiempo de Predicción**:
+- Individual: < 50ms
+- Lote (100): < 500ms
 
-**Model Size**: ~10-50MB (depending on complexity)
+**Tamaño del Modelo**: ~10-50MB (dependiendo de la complejidad)
 
-## 🔮 Future Enhancements
+## 🔮 Mejoras Futuras
 
-**Phase 1** (Easy):
-- [ ] Add logging
-- [ ] Add request/response examples
-- [ ] Add Docker support
-- [ ] Add more tests
+**Fase 1** (Fácil):
+- [ ] Agregar logging
+- [ ] Agregar ejemplos de request/response
+- [ ] Agregar soporte Docker
+- [ ] Agregar más pruebas
 
-**Phase 2** (Medium):
-- [ ] Add authentication
-- [ ] Add database for history
-- [ ] Add monitoring/metrics
-- [ ] Add rate limiting
+**Fase 2** (Medio):
+- [ ] Agregar autenticación
+- [ ] Agregar base de datos para historial
+- [ ] Agregar monitoreo/métricas
+- [ ] Agregar rate limiting
 
-**Phase 3** (Advanced):
-- [ ] Add model versioning
-- [ ] Add A/B testing
-- [ ] Add real-time retraining
-- [ ] Add explainability (SHAP)
+**Fase 3** (Avanzado):
+- [ ] Agregar versionado de modelos
+- [ ] Agregar pruebas A/B
+- [ ] Agregar reentrenamiento en tiempo real
+- [ ] Mejorar explicabilidad (SHAP adicional)
 
-## 🐛 Known Limitations
+## 🐛 Limitaciones Conocidas
 
-1. **Data Quality**: Some anomalies in original data (rates > 100%)
-2. **Temporal**: Only 2017 data, may not reflect current patterns
-3. **Features**: Limited to available columns
-4. **Security**: No authentication in current version
-5. **Scalability**: Single-threaded predictions
+1. **Calidad de Datos**: Algunas anomalías en datos originales (tasas > 100%)
+2. **Temporal**: Solo datos de 2017, puede no reflejar patrones actuales
+3. **Características**: Limitado a las columnas disponibles
+4. **Seguridad**: Sin autenticación en versión actual
+5. **Escalabilidad**: Predicciones en un solo hilo
 
-## 💡 Tips for Professor Review
+## 💡 Consejos para Revisión del Profesor
 
-**Key Strengths**:
-1. ✅ Clean, modular architecture
-2. ✅ Well-documented code
-3. ✅ Complete ML pipeline (prep → train → predict)
-4. ✅ Production-ready API with FastAPI
-5. ✅ Comprehensive documentation
-6. ✅ Follows best practices
+**Fortalezas Clave**:
+1. ✅ Arquitectura limpia y modular
+2. ✅ Código bien documentado
+3. ✅ Pipeline ML completo (preparación → entrenamiento → predicción)
+4. ✅ API lista para producción con FastAPI
+5. ✅ Documentación completa
+6. ✅ Sigue mejores prácticas
 
-**What to Test**:
-1. Train model: `python src/train_model.py`
-2. View API docs: `http://localhost:8000/docs`
-3. Make prediction via Swagger UI
-4. Check evaluation plots in `docs/`
-5. Review code structure
+**Qué Probar**:
+1. Entrenar modelo: `python src/train_model.py`
+2. Ver docs de API: `http://localhost:8000/docs`
+3. Hacer predicción vía Swagger UI
+4. Revisar gráficos de evaluación en `docs/`
+5. Revisar estructura del código
 
-**Evaluation Criteria Met**:
-- ✅ Data preparation
-- ✅ Model training
-- ✅ Model evaluation
-- ✅ API implementation
-- ✅ Documentation
-- ✅ Code quality
-- ✅ Project structure
+**Criterios de Evaluación Cumplidos**:
+- ✅ Preparación de datos
+- ✅ Entrenamiento del modelo
+- ✅ Evaluación del modelo
+- ✅ Implementación de API
+- ✅ Documentación
+- ✅ Calidad del código
+- ✅ Estructura del proyecto
 
-## 📞 Contact & Support
+## 📞 Contacto y Soporte
 
-For questions about this project:
-- Check README.md for detailed documentation
-- Check QUICKSTART.md for quick setup
-- Check PROJECT_STRUCTURE.md for architecture
-- Use Swagger UI for API testing
+Para preguntas sobre este proyecto:
+- Revisar README.md para documentación detallada
+- Revisar QUICKSTART.md para configuración rápida
+- Revisar docs/PROJECT_STRUCTURE.md para arquitectura
+- Usar Swagger UI para probar la API
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: 2024
-**Status**: ✅ Production Ready (for academic purposes)
+**Versión**: 1.0.0
+**Última Actualización**: 2025
+**Estado**: ✅ Listo para Producción (con fines académicos)
