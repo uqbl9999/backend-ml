@@ -10,7 +10,14 @@
       "Bash(dir:*)",
       "Bash(pip install:*)",
       "Bash(git remote add:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(git lfs ls-files:*)",
+      "Bash(git lfs install:*)",
+      "Bash(git lfs track:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
