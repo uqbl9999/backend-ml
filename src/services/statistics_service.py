@@ -331,11 +331,25 @@ def get_statistics_service() -> Optional[StatisticsService]:
     global _statistics_service
 
     if _statistics_service is None:
-        # Buscar el archivo de datos
-        data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'tamizajes.csv')
+        # Buscar el archivo de datos en múltiples ubicaciones
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-        if not os.path.exists(data_path):
-            print(f"⚠️  Archivo de datos no encontrado: {data_path}")
+        # Intentar diferentes rutas posibles
+        possible_paths = [
+            os.path.join(base_dir, 'data', 'tamizajes.csv'),  # Desarrollo local
+            os.path.join('/app', 'data', 'tamizajes.csv'),    # Render/Docker
+            os.path.join(os.getcwd(), 'data', 'tamizajes.csv'),  # Current working directory
+        ]
+
+        data_path = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                data_path = path
+                print(f"✅ Archivo de datos encontrado en: {path}")
+                break
+
+        if data_path is None:
+            print(f"⚠️  Archivo de datos no encontrado en ninguna de las rutas: {possible_paths}")
             return None
 
         try:

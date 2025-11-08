@@ -217,9 +217,27 @@ def get_ubigeo_service(ubigeo_file_path: str = None) -> UbigeoService:
 
     if _ubigeo_service is None:
         if ubigeo_file_path is None:
-            # Ruta por defecto
+            # Ruta por defecto - buscar en múltiples ubicaciones
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            ubigeo_file_path = os.path.join(base_dir, 'data', 'TB_UBIGEOS.csv')
+
+            # Intentar diferentes rutas posibles
+            possible_paths = [
+                os.path.join(base_dir, 'data', 'TB_UBIGEOS.csv'),  # Desarrollo local
+                os.path.join('/app', 'data', 'TB_UBIGEOS.csv'),    # Render/Docker
+                os.path.join(os.getcwd(), 'data', 'TB_UBIGEOS.csv'),  # Current working directory
+            ]
+
+            ubigeo_file_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    ubigeo_file_path = path
+                    print(f"✅ Archivo de ubigeos encontrado en: {path}")
+                    break
+
+            if ubigeo_file_path is None:
+                raise FileNotFoundError(
+                    f"No se encontró el archivo TB_UBIGEOS.csv en ninguna de las rutas: {possible_paths}"
+                )
 
         _ubigeo_service = UbigeoService(ubigeo_file_path)
 

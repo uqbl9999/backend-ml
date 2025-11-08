@@ -37,10 +37,9 @@ ENV/
 .ipynb_checkpoints
 *.ipynb_checkpoints
 
-# Data Files (don't commit large datasets)
-!*.csv
-!example.csv  # Allow example files
-data/tamizajes.csv
+# Data Files (large datasets are managed with Git LFS)
+# Los archivos CSV en data/ están gestionados por Git LFS
+!data/*.csv
 
 # Model Files (optional - large models might need Git LFS)
 # models/trained_model.pkl  # Comentado - ahora usamos Git LFS
