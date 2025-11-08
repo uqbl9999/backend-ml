@@ -62,25 +62,25 @@ backend-ml/
          ▼
 ┌─────────────────────────────┐
 │  data_preparation.py        │
-│  ┌─────────────────────┐   │
-│  │ 1. Cargar Datos     │   │
-│  │ 2. Calcular Tasa    │   │
-│  │ 3. Limpiar Datos    │   │
-│  │ 4. Ing. Features    │   │
-│  │ 5. Balancear Datos  │   │
-│  └─────────────────────┘   │
+│  ┌─────────────────────┐    │
+│  │ 1. Cargar Datos     │    │
+│  │ 2. Calcular Tasa    │    │
+│  │ 3. Limpiar Datos    │    │
+│  │ 4. Ing. Features    │    │
+│  │ 5. Balancear Datos  │    │
+│  └─────────────────────┘    │
 └──────────┬──────────────────┘
            │
            ▼
 ┌─────────────────────────────┐
 │  training.py                │
-│  ┌─────────────────────┐   │
-│  │ 1. Dividir Datos    │   │
-│  │ 2. Entrenar Modelo  │   │
-│  │ 3. Optimizar Params │   │
-│  │ 4. Evaluar          │   │
-│  │ 5. Guardar Modelo   │   │
-│  └─────────────────────┘   │
+│  ┌─────────────────────┐    │
+│  │ 1. Dividir Datos    │    │
+│  │ 2. Entrenar Modelo  │    │
+│  │ 3. Optimizar Params │    │
+│  │ 4. Evaluar          │    │
+│  │ 5. Guardar Modelo   │    │
+│  └─────────────────────┘    │
 └──────────┬──────────────────┘
            │
            ▼
@@ -91,24 +91,24 @@ backend-ml/
            ▼
 ┌─────────────────────────────┐
 │  prediction.py              │
-│  ┌─────────────────────┐   │
-│  │ 1. Cargar Modelo    │   │
-│  │ 2. Preparar Features│   │
-│  │ 3. Hacer Predicción │   │
-│  │ 4. Interpretar      │   │
-│  └─────────────────────┘   │
+│  ┌─────────────────────┐    │
+│  │ 1. Cargar Modelo    │    │
+│  │ 2. Preparar Features│    │
+│  │ 3. Hacer Predicción │    │
+│  │ 4. Interpretar      │    │
+│  └─────────────────────┘    │
 └──────────┬──────────────────┘
            │
            ▼
 ┌─────────────────────────────┐
 │  FastAPI (main.py)          │
-│  ┌─────────────────────┐   │
-│  │ Endpoints REST      │   │
-│  │ - /predict          │   │
-│  │ - /predict/explain  │   │
-│  │ - /predict/batch    │   │
-│  │ - /statistics/*     │   │
-│  └─────────────────────┘   │
+│  ┌─────────────────────┐    │
+│  │ Endpoints REST      │    │
+│  │ - /predict          │    │
+│  │ - /predict/explain  │    │
+│  │ - /predict/batch    │    │
+│  │ - /statistics/*     │    │
+│  └─────────────────────┘    │
 └──────────┬──────────────────┘
            │
            ▼
