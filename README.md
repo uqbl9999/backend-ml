@@ -579,11 +579,3 @@ Este proyecto fue desarrollado con fines académicos.
 ## 👥 Autores
 
 - Desarrollado como proyecto final del curso de Machine Learning
-
-## 📧 Contacto
-
-Para preguntas o sugerencias sobre el proyecto, contactar a [tu-email]
-
----
-
-**Última actualización**: 2024
