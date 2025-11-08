@@ -38,7 +38,7 @@ ENV/
 *.ipynb_checkpoints
 
 # Data Files (don't commit large datasets)
-*.csv
+!*.csv
 !example.csv  # Allow example files
 data/tamizajes.csv
 
