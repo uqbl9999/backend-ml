@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: backend-ml
+    env: docker
+    repo: https://github.com/uqbl9999/backend-ml
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    # Variables de entorno
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHONPATH
+        value: /app
+
+    # Health check
+    healthCheckPath: /health

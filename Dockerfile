@@ -28,6 +28,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY api/ ./api/
 COPY src/ ./src/
 COPY models/ ./models/
+COPY data/ ./data/
 
 # Set Python path
 ENV PYTHONPATH=/app
