@@ -34,6 +34,8 @@ pytest-asyncio>=0.21.0
 # ============================================================================
 # Deep Learning - Módulo de Reconocimiento de Imágenes Médicas
 # ============================================================================
-tensorflow-cpu>=2.16.0
-Pillow>=10.1.0
-opencv-python-headless>=4.9.0
+# MIGRACIÓN A HUGGING FACE SPACE:
+# - tensorflow-cpu removido (ahora en HF Space, ahorra ~200 MB RAM)
+# - opencv-python-headless removido (no se usaba)
+# - Pillow mantenido (opcional, puede removerse si se desea)
+Pillow>=10.1.0  # Opcional: mantener si se quiere validación local de imágenes

@@ -3,41 +3,46 @@ Servicio de reconocimiento de imágenes médicas.
 
 Este módulo proporciona una interfaz de alto nivel para el reconocimiento
 de imágenes de rayos X, integrando predicción y explicaciones XAI.
+
+MIGRACIÓN: Ahora actúa como proxy hacia Hugging Face Space.
+El modelo TensorFlow reside en HF para reducir memoria del backend.
 """
 
 import os
 import json
 from typing import Dict, List, Optional
-from src.models.image_prediction import ImagePredictor
+from src.services.huggingface_client import HuggingFaceImageClient
 
 
 class ImageRecognitionService:
     """
     Servicio para reconocimiento de imágenes médicas.
 
+    Ahora actúa como proxy hacia Hugging Face Space.
     Proporciona métodos para predicción, estadísticas y generación de
     explicaciones médicas usando IA explicable.
     """
 
-    def __init__(self, model_path: str):
+    def __init__(self, hf_space_url: str):
         """
-        Inicializar el servicio.
+        Inicializar el servicio con cliente HF.
 
         Parameters:
         -----------
-        model_path : str
-            Ruta al modelo entrenado (.keras).
+        hf_space_url : str
+            URL del Hugging Face Space con el modelo.
         """
-        self.model_path = model_path
-        self.predictor = ImagePredictor(model_path)
+        self.hf_client = HuggingFaceImageClient(hf_space_url)
+
+        # Mantener metadata_path local como fallback
         self.metadata_path = os.path.join(
-            os.path.dirname(model_path),
-            'model_metadata.json'
+            os.path.dirname(__file__),
+            '../../models/image_models/model_metadata.json'
         )
 
     def predict_from_upload(self, file_bytes: bytes, filename: str) -> Dict:
         """
-        Realizar predicción desde archivo upload con validación.
+        Realizar predicción desde archivo upload usando HF Space.
 
         Parameters:
         -----------
@@ -49,17 +54,17 @@ class ImageRecognitionService:
         Returns:
         --------
         dict
-            Resultado de la predicción.
+            Resultado de la predicción desde HF Space.
         """
         try:
-            result = self.predictor.predict_from_file(file_bytes, filename)
+            result = self.hf_client.predict_from_upload(file_bytes, filename)
             return result
         except Exception as e:
             raise Exception(f"Error en predicción desde upload: {str(e)}")
 
     def predict_from_url(self, url: str) -> Dict:
         """
-        Realizar predicción desde URL con validación.
+        Realizar predicción desde URL usando HF Space.
 
         Parameters:
         -----------
@@ -69,10 +74,10 @@ class ImageRecognitionService:
         Returns:
         --------
         dict
-            Resultado de la predicción.
+            Resultado de la predicción desde HF Space.
         """
         try:
-            result = self.predictor.predict_from_url(url)
+            result = self.hf_client.predict_from_url(url)
             return result
         except Exception as e:
             raise Exception(f"Error en predicción desde URL: {str(e)}")
@@ -193,42 +198,67 @@ class ImageRecognitionService:
 
     def get_statistics(self) -> Dict:
         """
-        Obtener estadísticas del modelo desde metadata.
+        Obtener estadísticas del modelo desde HF Space.
+        Usa metadata local como fallback.
 
         Returns:
         --------
         dict
             Estadísticas del modelo (accuracy, métricas por clase, etc.).
         """
-        if not os.path.exists(self.metadata_path):
-            raise FileNotFoundError("Metadata del modelo no encontrada")
-
         try:
-            with open(self.metadata_path, 'r', encoding='utf-8') as f:
-                metadata = json.load(f)
-
-            metrics = metadata.get('metrics', {})
-
-            return {
-                'test_accuracy': metrics.get('test_accuracy', 0.0),
-                'test_loss': metrics.get('test_loss', 0.0),
-                'per_class_metrics': metrics.get('per_class_metrics', {}),
-                'confusion_matrix': metrics.get('confusion_matrix', [])
-            }
-
+            # Intentar obtener desde HF Space primero
+            return self.hf_client.get_statistics()
         except Exception as e:
-            raise Exception(f"Error cargando estadísticas: {str(e)}")
+            # Fallback a metadata local
+            print(f"⚠️ No se pudo obtener stats de HF Space: {e}. Usando metadata local.")
+
+            if not os.path.exists(self.metadata_path):
+                raise FileNotFoundError("Metadata del modelo no encontrada ni en HF ni localmente")
+
+            try:
+                with open(self.metadata_path, 'r', encoding='utf-8') as f:
+                    metadata = json.load(f)
+
+                metrics = metadata.get('metrics', {})
+
+                return {
+                    'test_accuracy': metrics.get('test_accuracy', 0.0),
+                    'test_loss': metrics.get('test_loss', 0.0),
+                    'per_class_metrics': metrics.get('per_class_metrics', {}),
+                    'confusion_matrix': metrics.get('confusion_matrix', [])
+                }
+
+            except Exception as fallback_error:
+                raise Exception(f"Error cargando estadísticas: {str(fallback_error)}")
 
     def get_class_info(self) -> List[Dict]:
         """
-        Obtener información de las clases con descripciones médicas.
+        Obtener información de las clases desde HF Space.
 
         Returns:
         --------
         list
             Lista de diccionarios con información de cada clase.
         """
-        return self.predictor.get_class_descriptions()
+        try:
+            return self.hf_client.get_classes()
+        except Exception as e:
+            raise Exception(f"Error obteniendo clases: {str(e)}")
+
+    def get_model_info(self) -> Dict:
+        """
+        Obtener información del modelo desde HF Space.
+
+        Returns:
+        --------
+        dict
+            Información del modelo (arquitectura, training info, etc.).
+        """
+        try:
+            return self.hf_client.get_model_info()
+        except Exception as e:
+            raise Exception(f"Error obteniendo info del modelo: {str(e)}")
 
 
 # ============================================================================
@@ -238,65 +268,51 @@ class ImageRecognitionService:
 _image_service_instance: Optional[ImageRecognitionService] = None
 
 
-def get_image_service(model_path: Optional[str] = None) -> Optional[ImageRecognitionService]:
+def get_image_service(hf_space_url: Optional[str] = None) -> Optional[ImageRecognitionService]:
     """
     Obtener instancia singleton del servicio de imágenes.
 
+    MIGRACIÓN: Ahora usa HF Space URL en lugar de model_path.
+
     Parameters:
     -----------
-    model_path : str, optional
-        Ruta al modelo. Si no se especifica, se busca en rutas predeterminadas.
+    hf_space_url : str, optional
+        URL del Hugging Face Space. Si no se especifica, se obtiene de env var HF_SPACE_URL.
 
     Returns:
     --------
     ImageRecognitionService or None
-        Instancia del servicio o None si no se encuentra el modelo.
+        Instancia del servicio o None si no se puede conectar al HF Space.
     """
     global _image_service_instance
 
     if _image_service_instance is None:
-        if model_path is None:
-            model_path = _find_model_path()
+        if hf_space_url is None:
+            hf_space_url = os.getenv('HF_SPACE_URL')
 
-        if model_path and os.path.exists(model_path):
-            try:
-                _image_service_instance = ImageRecognitionService(model_path)
-            except Exception as e:
-                print(f"Error al inicializar servicio de imágenes: {e}")
+        if not hf_space_url:
+            print("⚠️  HF_SPACE_URL no configurada. Los endpoints de imágenes no estarán disponibles.")
+            print("    Configura la variable de entorno HF_SPACE_URL con la URL de tu Space.")
+            return None
+
+        try:
+            _image_service_instance = ImageRecognitionService(hf_space_url)
+
+            # Health check al HF Space
+            health = _image_service_instance.hf_client.health_check()
+            if health.get('status') == 'healthy':
+                print(f"✅ Servicio de imágenes conectado a HF Space: {hf_space_url}")
+            else:
+                print(f"⚠️  HF Space no saludable: {health}")
+                print("    Verifica que el Space esté corriendo en Hugging Face.")
                 return None
-        else:
-            print("⚠️  Modelo de imágenes no encontrado. Los endpoints de imágenes no estarán disponibles.")
+
+        except Exception as e:
+            print(f"Error al conectar con HF Space: {e}")
             return None
 
     return _image_service_instance
 
 
-def _find_model_path() -> Optional[str]:
-    """
-    Buscar modelo en rutas predeterminadas.
-
-    Returns:
-    --------
-    str or None
-        Ruta al modelo si se encuentra, None en caso contrario.
-    """
-    # Rutas posibles para desarrollo y producción
-    possible_paths = [
-        # Desarrollo local (relativo al archivo)
-        os.path.join(
-            os.path.dirname(__file__),
-            '../../models/image_models/best_model.keras'
-        ),
-        # Producción (Docker/Render)
-        '/app/models/image_models/best_model.keras',
-        # CWD
-        os.path.join(os.getcwd(), 'models/image_models/best_model.keras'),
-    ]
-
-    for path in possible_paths:
-        abs_path = os.path.abspath(path)
-        if os.path.exists(abs_path):
-            print(f"✅ Modelo de imágenes encontrado en: {abs_path}")
-            return abs_path
-
-    return None
+# MIGRACIÓN: _find_model_path() eliminada - ya no se busca modelo local
+# El modelo ahora reside en Hugging Face Space
