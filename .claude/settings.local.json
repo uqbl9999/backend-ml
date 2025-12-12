@@ -21,7 +21,9 @@
       "Bash(git lfs status:*)",
       "Bash(nul)",
       "Bash(findstr:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git rm:*)",
+      "Bash(git lfs prune:*)"
     ],
     "deny": [],
     "ask": []
