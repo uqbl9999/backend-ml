@@ -23,7 +23,8 @@
       "Bash(findstr:*)",
       "Bash(git reset:*)",
       "Bash(git rm:*)",
-      "Bash(git lfs prune:*)"
+      "Bash(git lfs prune:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
