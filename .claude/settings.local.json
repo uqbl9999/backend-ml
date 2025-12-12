@@ -20,7 +20,8 @@
       "Bash(git push:*)",
       "Bash(git lfs status:*)",
       "Bash(nul)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
