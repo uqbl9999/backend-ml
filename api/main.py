@@ -2,10 +2,10 @@
 FastAPI Application for Mental Health Screening Predictions
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, field_validator
-from typing import List, Optional
+from pydantic import BaseModel, Field, field_validator, HttpUrl
+from typing import List, Optional, Dict
 import sys
 import os
 from dotenv import load_dotenv
@@ -20,6 +20,7 @@ from src.models.prediction import Predictor
 from src.services.ubigeo_service import get_ubigeo_service
 from src.services.xai_service import get_xai_service
 from src.services.statistics_service import get_statistics_service
+from src.services.image_service import get_image_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -43,12 +44,13 @@ predictor = None
 ubigeo_service = None
 xai_service = None
 statistics_service = None
+image_service = None
 
 
 @app.on_event("startup")
 async def startup_event():
     """Cargar modelo y servicios al iniciar"""
-    global predictor, ubigeo_service, xai_service, statistics_service
+    global predictor, ubigeo_service, xai_service, statistics_service, image_service
     try:
         predictor = Predictor(MODEL_PATH)
         print("✅ Modelo cargado correctamente")
@@ -83,6 +85,17 @@ async def startup_event():
     except Exception as e:
         print(f"⚠️  Advertencia: No se pudo cargar el servicio de estadísticas: {e}")
         print("    Las funciones de estadísticas no estarán disponibles")
+
+    # Cargar servicio de imágenes
+    try:
+        image_service = get_image_service()
+        if image_service:
+            print("✅ Servicio de reconocimiento de imágenes cargado correctamente")
+        else:
+            print("⚠️  Advertencia: Servicio de imágenes no disponible (modelo no encontrado)")
+    except Exception as e:
+        print(f"⚠️  Advertencia: No se pudo cargar el servicio de imágenes: {e}")
+        print("    Los endpoints de imágenes no estarán disponibles")
 
 
 # Request models
@@ -155,8 +168,8 @@ class BatchPredictionInput(BaseModel):
     predictions: List[PredictionInput]
 
 
-class ModelInfoOutput(BaseModel):
-    """Salida de información del modelo"""
+class ScreeningModelInfoOutput(BaseModel):
+    """Salida de información del modelo de screening"""
     model_type: str
     n_features: int
     metrics: dict
@@ -177,6 +190,59 @@ class PredictionWithXAIOutput(BaseModel):
     explicacion: Optional[XAIExplanationOutput] = Field(None, description="Explicación de IA explicable")
 
 
+# ============================================================================
+# IMAGE RECOGNITION MODELS
+# ============================================================================
+
+class ImagePredictionOutput(BaseModel):
+    """Respuesta de predicción de imagen"""
+    predicted_class: str = Field(..., description="Clase predicha")
+    confidence: float = Field(..., ge=0, le=1, description="Confianza (0-1)")
+    interpretation: str = Field(..., description="Interpretación del resultado")
+    all_probabilities: Dict[str, float] = Field(..., description="Probabilidades de todas las clases")
+    metadata: Dict = Field(..., description="Metadata del procesamiento")
+
+
+class ImageURLInput(BaseModel):
+    """Input para predicción desde URL"""
+    image_url: HttpUrl = Field(..., description="URL de la imagen de rayos X")
+
+
+class ImageXAIOutput(BaseModel):
+    """Salida de predicción con explicación XAI"""
+    predicted_class: str
+    confidence: float
+    interpretation: str
+    all_probabilities: Dict[str, float]
+    metadata: Dict
+    explicacion: Optional[Dict] = Field(None, description="Explicación médica XAI")
+
+
+class ImageModelInfoOutput(BaseModel):
+    """Información del modelo CNN"""
+    model_type: str
+    framework: str
+    input_shape: List[int]
+    num_classes: int
+    classes: List[str]
+    architecture: Dict
+    training_info: Dict
+
+
+class ClassInfoOutput(BaseModel):
+    """Información de una clase"""
+    class_name: str
+    description: str
+
+
+class ModelStatisticsOutput(BaseModel):
+    """Estadísticas del modelo"""
+    test_accuracy: float
+    test_loss: float
+    per_class_metrics: Dict[str, Dict[str, float]]
+    confusion_matrix: List[List[int]]
+
+
 # API Endpoints
 
 @app.get("/")
@@ -186,11 +252,21 @@ async def root():
         "message": "Mental Health Screening Prediction API",
         "version": "1.0.0",
         "endpoints": {
-            "predict": "/predict",
-            "predict_batch": "/predict/batch",
-            "predict_with_explanation": "/predict/explain",
-            "model_info": "/model/info",
-            "feature_importance": "/model/features",
+            "screening": {
+                "predict": "/predict",
+                "predict_batch": "/predict/batch",
+                "predict_with_explanation": "/predict/explain",
+                "model_info": "/model/info",
+                "feature_importance": "/model/features"
+            },
+            "image_recognition": {
+                "predict_upload": "/image/predict",
+                "predict_url": "/image/predict-url",
+                "predict_with_explanation": "/image/predict/explain",
+                "model_info": "/image/model/info",
+                "classes": "/image/model/classes",
+                "statistics": "/image/model/statistics"
+            },
             "health": "/health",
             "statistics": {
                 "descriptive_stats": "/statistics/descriptive",
@@ -376,7 +452,7 @@ async def predict_with_explanation(input_data: PredictionInput):
         raise HTTPException(status_code=500, detail=f"Error de predicción: {str(e)}")
 
 
-@app.get("/model/info", response_model=ModelInfoOutput)
+@app.get("/model/info", response_model=ScreeningModelInfoOutput)
 async def get_model_info():
     """
     Obtener información del modelo
@@ -685,6 +761,152 @@ async def get_department_summary(top_n: Optional[int] = None):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener resumen de departamentos: {str(e)}")
+
+
+# ============================================================================
+# ENDPOINTS DE RECONOCIMIENTO DE IMÁGENES MÉDICAS
+# ============================================================================
+
+@app.post("/image/predict", response_model=ImagePredictionOutput)
+async def predict_image(file: UploadFile = File(...)):
+    """
+    Predicción de rayos X desde archivo upload
+
+    Acepta imágenes en formato JPG, JPEG, PNG (máx 10 MB)
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    # Validar content type
+    if not file.content_type or not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser una imagen")
+
+    try:
+        # Leer bytes
+        file_bytes = await file.read()
+
+        # Validar tamaño (10 MB máx)
+        if len(file_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Imagen demasiado grande (máx 10 MB)")
+
+        # Predicción
+        result = image_service.predict_from_upload(file_bytes, file.filename)
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando imagen: {str(e)}")
+
+
+@app.post("/image/predict-url", response_model=ImagePredictionOutput)
+async def predict_image_from_url(input_data: ImageURLInput):
+    """
+    Predicción de rayos X desde URL
+
+    Descarga la imagen desde la URL proporcionada y realiza la predicción
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    try:
+        result = image_service.predict_from_url(str(input_data.image_url))
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando imagen desde URL: {str(e)}")
+
+
+@app.post("/image/predict/explain", response_model=ImageXAIOutput)
+async def predict_image_with_explanation(file: UploadFile = File(...)):
+    """
+    Predicción de rayos X con explicación médica XAI
+
+    Genera una predicción y una explicación detallada usando IA explicable.
+    Requiere PERPLEXITY_API_KEY configurada.
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    if xai_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Servicio XAI no disponible. Configure PERPLEXITY_API_KEY."
+        )
+
+    try:
+        # Predicción base
+        file_bytes = await file.read()
+
+        if len(file_bytes) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Imagen demasiado grande (máx 10 MB)")
+
+        result = image_service.predict_from_upload(file_bytes, file.filename)
+
+        # Generar explicación XAI
+        xai_result = image_service.generate_explanation_with_xai(result, xai_service)
+
+        if xai_result['success']:
+            result['explicacion'] = xai_result['explanation']
+        else:
+            result['explicacion'] = xai_result.get('explanation', None)
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/image/model/info", response_model=ImageModelInfoOutput)
+async def get_image_model_info():
+    """
+    Información del modelo CNN
+
+    Retorna arquitectura, parámetros de entrenamiento y detalles técnicos.
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    try:
+        info = image_service.predictor.get_model_info()
+        return info
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/image/model/classes", response_model=List[ClassInfoOutput])
+async def get_image_classes():
+    """
+    Lista de clases con descripciones médicas
+
+    Retorna información sobre las 4 clases: COVID19, NORMAL, PNEUMONIA, TUBERCULOSIS
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    try:
+        classes = image_service.get_class_info()
+        return classes
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+@app.get("/image/model/statistics", response_model=ModelStatisticsOutput)
+async def get_image_model_statistics():
+    """
+    Estadísticas detalladas del modelo
+
+    Retorna accuracy, métricas por clase (precision, recall, F1) y matriz de confusión.
+    """
+    if image_service is None:
+        raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
+
+    try:
+        stats = image_service.get_statistics()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -268,6 +268,191 @@ Responde SOLO con el JSON, sin texto adicional:
 
         return explanations
 
+    def generate_medical_image_explanation(
+        self,
+        predicted_class: str,
+        confidence: float,
+        all_probabilities: Dict[str, float],
+        model: str = "sonar",
+        temperature: float = 0.7
+    ) -> Dict:
+        """
+        Genera una explicación médica XAI para predicciones de imágenes de rayos X
+
+        Args:
+            predicted_class: Clase predicha (COVID19, NORMAL, PNEUMONIA, TUBERCULOSIS)
+            confidence: Nivel de confianza de la predicción (0-1)
+            all_probabilities: Diccionario con todas las probabilidades por clase
+            model: Modelo de Perplexity a usar (default: sonar)
+            temperature: Temperatura para la generación (default: 0.7)
+
+        Returns:
+            Dict con la explicación estructurada
+        """
+        try:
+            prompt = f"""Eres un radiólogo experto. Has recibido el resultado de un modelo de IA que analiza radiografías de tórax.
+
+RESULTADO DEL MODELO:
+- Diagnóstico predicho: {predicted_class}
+- Nivel de confianza: {confidence:.1%}
+- Probabilidades:
+  * COVID19: {all_probabilities.get('COVID19', 0):.1%}
+  * NORMAL: {all_probabilities.get('NORMAL', 0):.1%}
+  * PNEUMONIA: {all_probabilities.get('PNEUMONIA', 0):.1%}
+  * TUBERCULOSIS: {all_probabilities.get('TUBERCULOSIS', 0):.1%}
+
+Genera una explicación clínica en formato JSON con:
+
+1. "contexto_clinico": Una frase (máx 30 palabras) explicando qué significa este resultado.
+
+2. "recomendaciones": Array con 3 acciones clínicas concretas (cada una máx 12 palabras).
+
+3. "consideraciones": Array con 2-3 puntos importantes sobre este diagnóstico (cada uno máx 10 palabras).
+
+IMPORTANTE:
+- Sé claro y profesional
+- Si la confianza es < 70%, menciona necesidad de revisión por especialista
+- Si hay diagnósticos diferenciales (otras probabilidades > 20%), menciónalo
+
+Responde SOLO con el JSON:
+{{
+  "contexto_clinico": "...",
+  "recomendaciones": ["...", "...", "..."],
+  "consideraciones": ["...", "..."]
+}}"""
+
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Eres un radiólogo experto. Generas explicaciones médicas concisas y profesionales en formato JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": temperature,
+                "max_tokens": 600
+            }
+
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self.headers,
+                json=payload,
+                timeout=30
+            )
+
+            response.raise_for_status()
+            response_data = response.json()
+
+            # Extraer el contenido de la respuesta
+            content = response_data['choices'][0]['message']['content']
+
+            # Limpiar el contenido si viene con markdown o texto adicional
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+
+            explanation = json.loads(content)
+
+            return {
+                "success": True,
+                "explanation": explanation,
+                "tokens_used": response_data.get('usage', {}).get('total_tokens', 0)
+            }
+
+        except requests.exceptions.RequestException as e:
+            return self._get_fallback_medical_explanation(predicted_class, confidence, all_probabilities, str(e))
+        except json.JSONDecodeError as e:
+            return self._get_fallback_medical_explanation(predicted_class, confidence, all_probabilities, str(e))
+        except Exception as e:
+            return self._get_fallback_medical_explanation(predicted_class, confidence, all_probabilities, str(e))
+
+    def _get_fallback_medical_explanation(
+        self,
+        predicted_class: str,
+        confidence: float,
+        all_probabilities: Dict[str, float],
+        error: str
+    ) -> Dict:
+        """
+        Genera una explicación médica de fallback cuando XAI falla
+
+        Args:
+            predicted_class: Clase predicha
+            confidence: Nivel de confianza
+            all_probabilities: Probabilidades de todas las clases
+            error: Mensaje de error
+
+        Returns:
+            Dict con explicación fallback
+        """
+        # Recomendaciones por clase
+        recommendations_by_class = {
+            'COVID19': [
+                "Solicitar prueba PCR para SARS-CoV-2",
+                "Evaluar saturación de oxígeno y función respiratoria",
+                "Considerar aislamiento preventivo según protocolos"
+            ],
+            'NORMAL': [
+                "Mantener seguimiento rutinario",
+                "Fomentar hábitos saludables",
+                "Consultar si aparecen síntomas respiratorios"
+            ],
+            'PNEUMONIA': [
+                "Realizar cultivos para identificar agente etiológico",
+                "Iniciar tratamiento antibiótico empírico",
+                "Monitorear respuesta clínica y parámetros vitales"
+            ],
+            'TUBERCULOSIS': [
+                "Solicitar baciloscopia y cultivo de esputo",
+                "Evaluar contactos cercanos del paciente",
+                "Referir a programa de control de tuberculosis"
+            ]
+        }
+
+        context_by_class = {
+            'COVID19': "Patrón compatible con neumonía viral por COVID-19, requiere confirmación con PCR.",
+            'NORMAL': "Radiografía sin hallazgos patológicos significativos.",
+            'PNEUMONIA': "Patrón sugestivo de proceso infeccioso pulmonar, requiere correlación clínica.",
+            'TUBERCULOSIS': "Hallazgos compatibles con tuberculosis pulmonar, requiere confirmación bacteriológica."
+        }
+
+        considerations = []
+        if confidence >= 0.90:
+            considerations.append(f"Confianza alta en diagnóstico de {predicted_class}")
+        elif confidence >= 0.70:
+            considerations.append("Confianza moderada, confirmar con estudios adicionales")
+        else:
+            considerations.append("Baja confianza, revisión por especialista necesaria")
+
+        # Verificar diagnósticos diferenciales
+        differentials = [
+            cls for cls, prob in all_probabilities.items()
+            if cls != predicted_class and prob > 0.20
+        ]
+        if differentials:
+            considerations.append(f"Considerar diagnósticos diferenciales: {', '.join(differentials)}")
+
+        return {
+            'success': False,
+            'error': error,
+            'explanation': {
+                'contexto_clinico': context_by_class.get(
+                    predicted_class,
+                    f"Diagnóstico sugerido: {predicted_class}"
+                ),
+                'recomendaciones': recommendations_by_class.get(
+                    predicted_class,
+                    ["Consultar con especialista", "Realizar estudios complementarios", "Seguimiento clínico"]
+                ),
+                'consideraciones': considerations
+            }
+        }
+
 
 # Singleton instance
 _xai_service_instance: Optional[XAIService] = None

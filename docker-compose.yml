@@ -13,6 +13,8 @@ services:
     volumes:
       # Mount models directory if you want to use local models
       - ./models:/app/models:ro
+      # Mount temp directory for image uploads
+      - ./temp:/app/temp
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

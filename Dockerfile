@@ -30,12 +30,16 @@ COPY src/ ./src/
 COPY models/ ./models/
 COPY data/ ./data/
 
+# Create temp directory for image uploads
+RUN mkdir -p /app/temp
+
 # Set Python path
 ENV PYTHONPATH=/app
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    chown -R appuser:appuser /app/temp
 
 USER appuser
 
