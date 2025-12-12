@@ -867,7 +867,7 @@ async def predict_image_with_explanation(file: UploadFile = File(...)):
 @app.get("/image/model/info", response_model=ImageModelInfoOutput)
 async def get_image_model_info():
     """
-    Información del modelo CNN
+    Información del modelo CNN desde HF Space
 
     Retorna arquitectura, parámetros de entrenamiento y detalles técnicos.
     """
@@ -875,7 +875,7 @@ async def get_image_model_info():
         raise HTTPException(status_code=503, detail="Servicio de imágenes no disponible")
 
     try:
-        info = image_service.predictor.get_model_info()
+        info = image_service.get_model_info()
         return info
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
